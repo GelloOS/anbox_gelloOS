@@ -63,18 +63,18 @@ find_package(EGL REQUIRED)
 find_package(GLESv2 REQUIRED)
 find_package(Protobuf REQUIRED)
 
-pkg_check_modules(SDL2 sdl2 REQUIRED)
-pkg_check_modules(SDL2_IMAGE SDL2_image REQUIRED)
+#pkg_check_modules(SDL2 sdl2 REQUIRED)
+#pkg_check_modules(SDL2_IMAGE SDL2_image REQUIRED)
 pkg_check_modules(DBUS dbus-1 REQUIRED)
-pkg_check_modules(LXC lxc REQUIRED)
+#pkg_check_modules(LXC lxc REQUIRED)
 pkg_check_modules(PROPERTIES_CPP properties-cpp REQUIRED)
-pkg_check_modules(LIBSYSTEMD libsystemd REQUIRED)
+#pkg_check_modules(LIBSYSTEMD libsystemd REQUIRED)
 
-message(STATUS "LXC version: ${LXC_VERSION}")
-if (${LXC_VERSION} VERSION_LESS 3.0)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENABLE_LXC2_SUPPORT")
-  message(STATUS "Building with LXC 2.x compatibility support")
-endif()
+# message(STATUS "LXC version: ${LXC_VERSION}")
+# if (${LXC_VERSION} VERSION_LESS 3.0)
+#   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENABLE_LXC2_SUPPORT")
+#   message(STATUS "Building with LXC 2.x compatibility support")
+# endif()
 
 option(ENABLE_X11 "Enable X11 support" ON)
 if (ENABLE_X11)
@@ -117,7 +117,7 @@ IF(CMAKE_BUILD_TYPE MATCHES [cC][oO][vV][eE][rR][aA][gG][eE])
   SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -ftest-coverage -fprofile-arcs" )
 ENDIF(CMAKE_BUILD_TYPE MATCHES [cC][oO][vV][eE][rR][aA][gG][eE])
 
-find_package(GMock)
+#find_package(GMock)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC")
 
@@ -136,8 +136,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/anbox/build/config.h.in
                ${CMAKE_CURRENT_SOURCE_DIR}/src/anbox/build/config.h)
 
 add_subdirectory(external)
-add_subdirectory(src)
-add_subdirectory(tests)
+#add_subdirectory(src)
+add_subdirectory(src/fydeos)
+#add_subdirectory(tests)
 add_subdirectory(android)
 
 if (NOT "${HOST_CMAKE_C_COMPILER}" STREQUAL "")
@@ -151,11 +152,11 @@ if (SNAP_CONFINEMENT)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENABLE_SNAP_CONFINEMENT")
 endif()
 
-install(FILES data/ui/loading-screen.png DESTINATION ${ANBOX_RESOURCE_DIR}/ui)
+# install(FILES data/ui/loading-screen.png DESTINATION ${ANBOX_RESOURCE_DIR}/ui)
 
 # uninstall target
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-               IMMEDIATE @ONLY)
-add_custom_target(uninstall "${CMAKE_COMMAND}"
-                  -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
+# configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+#                "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+#                IMMEDIATE @ONLY)
+# add_custom_target(uninstall "${CMAKE_COMMAND}"
+#                   -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
