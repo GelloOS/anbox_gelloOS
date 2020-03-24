@@ -336,10 +336,10 @@ set(SOURCES
     ../anbox/wm/window_state.cpp
     ../anbox/wm/window_state.h
 
-    ../anbox/cli.cpp
-    ../anbox/cli.h
-    ../anbox/daemon.cpp
-    ../anbox/daemon.h
+    #../anbox/cli.cpp
+    #../anbox/cli.h
+    #../anbox/daemon.cpp
+    #../anbox/daemon.h
     ../anbox/defer_action.h
     ../anbox/do_not_copy_or_move.h
     ../anbox/logger.cpp
