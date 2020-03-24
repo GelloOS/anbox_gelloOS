@@ -147,19 +147,19 @@ set(SOURCES
     ../anbox/container/service.cpp
     ../anbox/container/service.h
 
-    ../anbox/dbus/bus.cpp
-    ../anbox/dbus/bus.h
-    ../anbox/dbus/codecs.h
-    ../anbox/dbus/interface.h
-    ../anbox/dbus/sd_bus_helpers.c
-    ../anbox/dbus/sd_bus_helpers.h
-    ../anbox/dbus/sd_bus_helpers.hpp
-    ../anbox/dbus/skeleton/application_manager.cpp
-    ../anbox/dbus/skeleton/application_manager.h
-    ../anbox/dbus/skeleton/service.cpp
-    ../anbox/dbus/skeleton/service.h
-    ../anbox/dbus/stub/application_manager.cpp
-    ../anbox/dbus/stub/application_manager.h
+    #../anbox/dbus/bus.cpp
+    #../anbox/dbus/bus.h
+    #../anbox/dbus/codecs.h
+    #../anbox/dbus/interface.h
+    #../anbox/dbus/sd_bus_helpers.c
+    #../anbox/dbus/sd_bus_helpers.h
+    #../anbox/dbus/sd_bus_helpers.hpp
+    #../anbox/dbus/skeleton/application_manager.cpp
+    #../anbox/dbus/skeleton/application_manager.h
+    #../anbox/dbus/skeleton/service.cpp
+    #../anbox/dbus/skeleton/service.h
+    #../anbox/dbus/stub/application_manager.cpp
+    #../anbox/dbus/stub/application_manager.h
 
     ../anbox/graphics/buffered_io_stream.cpp
     ../anbox/graphics/buffered_io_stream.h
