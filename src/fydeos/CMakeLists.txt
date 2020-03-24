@@ -89,20 +89,20 @@ set(SOURCES
     ../anbox/build/config.h
     ../anbox/build/config.h.in
 
-    ../anbox/cmds/container_manager.cpp
-    ../anbox/cmds/container_manager.h
-    ../anbox/cmds/launch.cpp
-    ../anbox/cmds/launch.h
-    ../anbox/cmds/session_manager.cpp
-    ../anbox/cmds/session_manager.h
-    ../anbox/cmds/system_info.cpp
-    ../anbox/cmds/system_info.h
-    ../anbox/cmds/version.cpp
-    ../anbox/cmds/version.h
-    ../anbox/cmds/wait_ready.cpp
-    ../anbox/cmds/wait_ready.h
-    ../anbox/cmds/check_features.cpp
-    ../anbox/cmds/check_features.h
+    #../anbox/cmds/container_manager.cpp
+    #../anbox/cmds/container_manager.h
+    #../anbox/cmds/launch.cpp
+    #../anbox/cmds/launch.h
+    #../anbox/cmds/session_manager.cpp
+    #../anbox/cmds/session_manager.h
+    #../anbox/cmds/system_info.cpp
+    #../anbox/cmds/system_info.h
+    #../anbox/cmds/version.cpp
+    #../anbox/cmds/version.h
+    #../anbox/cmds/wait_ready.cpp
+    #../anbox/cmds/wait_ready.h
+    #../anbox/cmds/check_features.cpp
+    #../anbox/cmds/check_features.h
 
     ../anbox/common/binary_writer.cpp
     ../anbox/common/binary_writer.h
