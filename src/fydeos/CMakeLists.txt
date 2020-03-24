@@ -377,9 +377,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-cast-qual")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-old-style-cast -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-variable -Wno-format -Wno-cast-qual")
 set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -Wno-old-style-cast -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-variable -Wno-format -Wno-cast-qual")
 
-SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--copy-dt-needed-entries" )
-SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--copy-dt-needed-entries" )
-SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--copy-dt-needed-entries" )
+#SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--copy-dt-needed-entries" )
+#SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--copy-dt-needed-entries" )
+#SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--copy-dt-needed-entries" )
 
 add_executable(anbox-session session.cpp ${BACKWARD_ENABLE})
 target_link_libraries(anbox-session

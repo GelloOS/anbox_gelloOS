@@ -19,6 +19,7 @@
 #ifndef ANBOX_GRAPHICS_PROGRAM_FAMILY_H_
 #define ANBOX_GRAPHICS_PROGRAM_FAMILY_H_
 
+#include <string>
 #include <map>
 #include <unordered_map>
 #include <utility>
