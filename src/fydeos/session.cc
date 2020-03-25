@@ -24,9 +24,11 @@
 #include "anbox/wm/single_window_manager.h"
 #include "anbox/platform/null/platform.h"
 
+#include "wayland_window.h"
+
 using namespace anbox;
 
-int main(int argc, char** argv) {        
+int session(){
   Log().Init(anbox::Logger::Severity::kDebug);  
 
   auto trap = core::posix::trap_signals_for_process(
@@ -201,5 +203,20 @@ int main(int argc, char** argv) {
 
   // container_->stop();
   // rt->stop();
+  return 0;
+}
+
+int main(int argc, char** argv) {
+  // base::AtExitManager exit_manager;
+  // base::CommandLine::Init(argc, argv);
+  // base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  // exo::wayland::clients::ClientBase::InitParams params;
+  // if (!params.FromCommandLine(*command_line))
+  //   return 1;
+
+  auto w1 = new WaylandWindow();
+
+  session();
+
   return 0;
 }

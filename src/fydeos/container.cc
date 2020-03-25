@@ -22,12 +22,12 @@ using namespace anbox;
 namespace fs = boost::filesystem;
 
 namespace {
-constexpr unsigned int unprivileged_user_id{100000};
+constexpr unsigned int unprivileged_user_id{655350};
 }
 
 std::string android_img_path_;
 std::string data_path_;
-std::shared_ptr<common::LoopDevice> android_img_loop_dev_;
+//std::shared_ptr<common::LoopDevice> android_img_loop_dev_;
 std::vector<std::shared_ptr<common::MountEntry>> mounts_;
 // bool privileged_ = false;
 // bool daemon_ = false;
@@ -182,6 +182,7 @@ bool setup_mounts() {
 
 
 int main(int argc, char** argv) {  
+  data_path_ = argv[1];
 
   auto trap = core::posix::trap_signals_for_process(
       {core::posix::Signal::sig_term, core::posix::Signal::sig_int});
