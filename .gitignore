@@ -23,3 +23,5 @@ debian/anbox-modules-dkms.substvars
 debian/anbox-modules-dkms/
 debian/debhelper-build-stamp
 debian/files
+
+.vscode/
