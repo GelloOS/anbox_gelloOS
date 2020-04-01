@@ -27,6 +27,8 @@
 
 #include <memory>
 
+#include "fydeos/renderer.h"
+
 class Renderer;
 
 namespace anbox {
@@ -58,6 +60,8 @@ class Window {
   graphics::Rect frame() const;
   Task::Id task() const;
   std::string title() const;
+
+  anbox::fydeos::Renderer* getFydeRenderer();
 
  private:
   std::shared_ptr<Renderer> renderer_;

@@ -37,11 +37,14 @@ include_directories(
   /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen
   /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/components/exo/wayland/protocol
   /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/unstable/vsync-feedback
+  /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/unstable/remote-shell  
   /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/unstable/linux-dmabuf
   /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/unstable/fullscreen-shell
   /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/unstable/input-timestamps
   /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/unstable/linux-explicit-synchronization
-  /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/stable/presentation-time
+  /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/unstable/xdg-shell
+  /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/stable/viewporter  
+  /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/stable/presentation-time    
 )
 
 add_definitions(-DOS_CHROMEOS -DUSE_OZONE -DUSE_GBM -DUSE_AURA -DUSE_EGL)              
@@ -372,67 +375,67 @@ set(SOURCES
     ../anbox/system_configuration.cpp
     ../anbox/system_configuration.h)
 
-# add_library(chromium-wayland
-#     STATIC
+add_library(chromium-wayland2
+    STATIC
 
-#     /home/$ENV{USER}/chromium_r80/src/base/third_party/icu/icu_utf.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/third_party/icu/icu_utf.cc
 
-#     /home/$ENV{USER}/chromium_r80/src/base/at_exit.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/command_line.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/logging.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/strings/string_piece.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/strings/string16.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/strings/string_util.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/strings/string_util_constants.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/strings/sys_string_conversions_posix.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/strings/utf_string_conversions.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/strings/stringprintf.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/at_exit.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/command_line.cc
+    # /home/$ENV{PORTAGE_USERNAME}/chrome_root/src/base/logging.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/strings/string_piece.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/strings/string16.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/strings/string_util.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/strings/string_util_constants.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/strings/sys_string_conversions_posix.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/strings/utf_string_conversions.cc
+     /home/$ENV{PORTAGE_USERNAME}/chrome_root/src/base/strings/stringprintf.cc
 
-#     /home/$ENV{USER}/chromium_r80/src/base/files/file.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/files/file_path.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/files/file_path_constants.cc   
-#     /home/$ENV{USER}/chromium_r80/src/base/files/file_util_posix.cc 
-#     /home/$ENV{USER}/chromium_r80/src/base/files/file_posix.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/files/file_tracing.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/files/scoped_file.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/files/file.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/files/file_path.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/files/file_path_constants.cc   
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/files/file_util_posix.cc 
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/files/file_posix.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/files/file_tracing.cc
+    #/home/$ENV{PORTAGE_USERNAME}/chrome_root/src/base/files/scoped_file.cc
 
-#     /home/$ENV{USER}/chromium_r80/src/base/pickle.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/callback_internal.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/task_runner.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/values.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/token.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/unguessable_token.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/sequenced_task_runner.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/location.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/lazy_instance_helpers.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/rand_util_posix.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/process/process_metrics_posix.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/pickle.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/callback_internal.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/task_runner.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/values.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/token.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/unguessable_token.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/sequenced_task_runner.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/location.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/lazy_instance_helpers.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/rand_util_posix.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/process/process_metrics_posix.cc
 
-#     /home/$ENV{USER}/chromium_r80/src/base/memory/shared_memory_mapping.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/memory/shared_memory_tracker.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/trace_event/memory_allocator_dump_guid.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/trace_event/memory_dump_manager.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/trace_event/memory_allocator_dump.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/trace_event/traced_value.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/trace_event/trace_event_memory_overhead.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/trace_event/memory_usage_estimator.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/trace_event/process_memory_dump.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/task/post_task.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/time/time.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/memory/shared_memory_mapping.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/memory/shared_memory_tracker.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/trace_event/memory_allocator_dump_guid.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/trace_event/memory_dump_manager.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/trace_event/memory_allocator_dump.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/trace_event/traced_value.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/trace_event/trace_event_memory_overhead.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/trace_event/memory_usage_estimator.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/trace_event/process_memory_dump.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/task/post_task.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/time/time.cc
 
-#     /home/$ENV{USER}/chromium_r80/src/base/threading/post_task_and_reply_impl.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/threading/sequenced_task_runner_handle.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/threading/thread_local_storage.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/threading/platform_thread_posix.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/threading/thread_local_storage_posix.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/threading/scoped_blocking_call.cc
-#     #/home/$ENV{USER}/chromium_r80/src/base/memory/discardable_memory.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/threading/post_task_and_reply_impl.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/threading/sequenced_task_runner_handle.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/threading/thread_local_storage.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/threading/platform_thread_posix.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/threading/thread_local_storage_posix.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/threading/scoped_blocking_call.cc
+#     ## /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/memory/discardable_memory.cc
 
-#     #/home/$ENV{USER}/chromium_r80/src/chromeos/components/nearby/lock_impl.cc
-#     /home/$ENV{USER}/chromium_r80/src/base/synchronization/lock_impl_posix.cc
-#     /home/$ENV{USER}/chromium_r80/src/components/exo/wayland/clients/client_base.cc
-# )
-# target_link_libraries(chromium-wayland)
+#     ## /home/$ENV{PORTAGE_USERNAME}/chrome_root/chromeos/components/nearby/lock_impl.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/base/synchronization/lock_impl_posix.cc
+#     # /home/$ENV{PORTAGE_USERNAME}/chrome_root/components/exo/wayland/clients/client_base.cc
+)
+target_link_libraries(chromium-wayland2)
 
 add_library(chromium-wayland
     STATIC
@@ -445,16 +448,26 @@ add_library(chromium-wayland
     /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/unstable/fullscreen-shell/fullscreen-shell-unstable-v1-protocol.c
     /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/unstable/input-timestamps/input-timestamps-unstable-v1-protocol.c
     /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/components/exo/wayland/protocol/aura-shell-protocol.c
+    /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/unstable/remote-shell/remote-shell-unstable-v1-protocol.c
     /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/stable/presentation-time/presentation-time-protocol.c
     /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/unstable/linux-explicit-synchronization/linux-explicit-synchronization-unstable-v1-protocol.c
+    /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/stable/viewporter/viewporter-protocol.c
+    /var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release/gen/third_party/wayland-protocols/src/unstable/xdg-shell/xdg-shell-unstable-v6-protocol.c
+    ./wayland_platform.cc
     ./wayland_window.cc
     ./wayland_helper.cc
 )
 target_link_libraries(
   chromium-wayland
+  # chromium-wayland2
   #/home/$ENV{USER}/chromium_r80/src/out_amd64-generic/Release/obj/ui/ozone/platform/drm/gbm/ozone_platform_gbm.o  
   #/home/builder/chromiumos_r80-qemu/chroot/build/amd64-qemu2/usr/lib64/libgbm.so
   /build/$ENV{BOARD}/usr/lib64/libgbm.so
+  /build/$ENV{BOARD}/usr/lib64/libdrm.so
+  #/var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release//obj/base/libbase_static.a  
+  #/var/cache/chromeos-chrome/chrome-src/src/out_$ENV{BOARD}/Release//obj/base/libbase.a  
+  #/usr/lib64/libwayland-egl.so.1
+  #/build/$ENV{BOARD}/usr/lib64/libwayland-egl.so
   ${WAYLAND_CLIENT_LIBRARIES}
 )
 
@@ -488,6 +501,14 @@ target_link_libraries(anbox-core
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-implicit-function-declaration")
 #set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -Wno-implicit-function-declaration")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -Wall -g -ggdb")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -Wall -g -ggdb")
+set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -O0 -Wall -g -ggdb")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-c++11-narrowing")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
+set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -Wno-c++11-narrowing")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-cast-qual")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-old-style-cast -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-variable -Wno-format -Wno-cast-qual")

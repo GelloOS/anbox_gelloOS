@@ -58,5 +58,10 @@ void Window::release() {
     return;
   renderer_->destroyNativeWindow(native_handle());
 }
+
+anbox::fydeos::Renderer* Window::getFydeRenderer(){
+  return dynamic_cast<anbox::fydeos::Renderer*>(renderer_.get());
+}
+
 }  // namespace wm
 }  // namespace anbox

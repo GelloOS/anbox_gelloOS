@@ -107,7 +107,7 @@ bool Renderer::initialize(EGLNativeDisplayType nativeDisplay) {
     ERROR("Failed to initialize EGL");
     return false;
   }
-
+  
   anbox::graphics::GLExtensions egl_extensions{s_egl.eglQueryString(m_eglDisplay, EGL_EXTENSIONS)};
 
   const auto surfaceless_supported = egl_extensions.support("EGL_KHR_surfaceless_context");
@@ -117,7 +117,8 @@ bool Renderer::initialize(EGLNativeDisplayType nativeDisplay) {
   s_egl.eglBindAPI(EGL_OPENGL_ES_API);
 
   // Create EGL context for framebuffer post rendering.
-  GLint surfaceType = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
+  // GLint surfaceType = EGL_WINDOW_BIT | EGL_PBUFFER_BIT;
+  GLint surfaceType = EGL_PBUFFER_BIT;
   const GLint configAttribs[] = {EGL_RED_SIZE, 8,
                                  EGL_GREEN_SIZE, 8,
                                  EGL_BLUE_SIZE, 8,
@@ -298,6 +299,8 @@ struct RendererWindow {
   anbox::graphics::Rect viewport;
   glm::mat4 screen_to_gl_coords;
   glm::mat4 display_transform;
+
+  anbox::fydeos::WaylandRenderer *pWaylandRenderer;
 };
 
 RendererWindow *Renderer::createNativeWindow(
@@ -306,15 +309,21 @@ RendererWindow *Renderer::createNativeWindow(
 
   auto window = new RendererWindow;
   window->native_window = native_window;
-  window->surface = s_egl.eglCreateWindowSurface(
-      m_eglDisplay, m_eglConfig, window->native_window, nullptr);
+  window->pWaylandRenderer = (anbox::fydeos::WaylandRenderer*)native_window;
+  // window->surface = s_egl.eglCreateWindowSurface(
+  //     m_eglDisplay, m_eglConfig, window->native_window, nullptr);
+
+  GLint attributes[] = { EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE };
+  window->surface = s_egl.eglCreatePbufferSurface(m_eglDisplay, m_eglConfig, attributes);
   if (window->surface == EGL_NO_SURFACE) {
     delete window;
     m_lock.unlock();
     return nullptr;
   }
-
-  if (!bindWindow_locked(window)) {
+  
+  DEBUG("Renderer::createNativeWindow %llX %llX", window->pWaylandRenderer, window->surface);
+  anbox::fydeos::Buffer_Ext *pExt = nullptr;
+  if (!bindWindow_locked(window, &pExt)) {
     s_egl.eglDestroySurface(m_eglDisplay, window->surface);
     delete window;
     m_lock.unlock();
@@ -325,7 +334,7 @@ RendererWindow *Renderer::createNativeWindow(
                   GL_STENCIL_BUFFER_BIT);
   s_egl.eglSwapBuffers(m_eglDisplay, window->surface);
 
-  unbind_locked();
+  unbind_locked(window, pExt);
 
   m_nativeWindows.insert({native_window, window});
 
@@ -750,7 +759,7 @@ bool Renderer::bind_locked() {
   return true;
 }
 
-bool Renderer::bindWindow_locked(RendererWindow *window) {
+bool Renderer::bindWindow_locked(RendererWindow *window, anbox::fydeos::Buffer_Ext **ppExt) {
   EGLContext prevContext = s_egl.eglGetCurrentContext();
   EGLSurface prevReadSurf = s_egl.eglGetCurrentSurface(EGL_READ);
   EGLSurface prevDrawSurf = s_egl.eglGetCurrentSurface(EGL_DRAW);
@@ -761,13 +770,40 @@ bool Renderer::bindWindow_locked(RendererWindow *window) {
     return false;
   }
 
+  if (window && ppExt){
+    auto pExt = window->pWaylandRenderer->bind();  
+
+    pExt->texture = 0;
+    s_gles2.glGenTextures(1, &pExt->texture);    
+    s_gles2.glBindTexture(GL_TEXTURE_2D, pExt->texture);    
+
+    s_gles2.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    s_gles2.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    s_gles2.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    s_gles2.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    s_gles2.glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, pExt->image);
+
+    s_gles2.glGenFramebuffers(1, &pExt->fbo);    
+    s_gles2.glBindFramebuffer(GL_FRAMEBUFFER, pExt->fbo);
+    
+    s_gles2.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pExt->texture, 0);    
+
+    *ppExt = pExt;
+  } 
+
   m_prevContext = prevContext;
   m_prevReadSurf = prevReadSurf;
   m_prevDrawSurf = prevDrawSurf;
   return true;
 }
 
-bool Renderer::unbind_locked() {
+bool Renderer::unbind_locked(RendererWindow *pWindow, anbox::fydeos::Buffer_Ext *pExt) {      
+  if (pWindow){    
+    // s_gles2.glFlush();
+    pWindow->pWaylandRenderer->unbind(pExt);  
+  }
+
   if (!s_egl.eglMakeCurrent(m_eglDisplay, m_prevDrawSurf, m_prevReadSurf,
                             m_prevContext)) {
     return false;
@@ -947,21 +983,172 @@ bool Renderer::draw(EGLNativeWindowType native_window,
   auto w = m_nativeWindows.find(native_window);
   if (w == m_nativeWindows.end()) return false;
 
-  if (!bindWindow_locked(w->second))
+  anbox::fydeos::Buffer_Ext *pExt = nullptr;
+  if (!bindWindow_locked(w->second, &pExt))
     return false;
+
+  DEBUG("Renderer::draw %d %d", window_frame.width(), window_frame.height());
 
   setupViewport(w->second, window_frame);
   s_gles2.glViewport(0, 0, window_frame.width(), window_frame.height());
   s_gles2.glClearColor(0.0, 0.0, 0.0, 1.0);
   s_gles2.glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-  s_gles2.glClear(GL_COLOR_BUFFER_BIT);
+  s_gles2.glClear(GL_COLOR_BUFFER_BIT);  
 
   for (const auto &r : renderables)
     draw(w->second, r, r.alpha() < 1.0f ? m_alphaProgram : m_defaultProgram);
 
-  s_egl.eglSwapBuffers(m_eglDisplay, w->second->surface);
+  // s_gles2.glClearColor(70.0/255.0, 0.0, 100.0/255.0, 1.0);
+  // s_gles2.glClear(GL_COLOR_BUFFER_BIT);    
 
-  unbind_locked();
+  // grab(window_frame.width(), window_frame.height());
+  s_egl.eglSwapBuffers(m_eglDisplay, w->second->surface);
+  
+  unbind_locked(w->second, pExt);
 
   return false;
+}
+
+void Renderer::createFydeBuffer(anbox::fydeos::Buffer_Ext *pExt, EGLint *pAttr){  
+  DEBUG("Renderer::createFydeBuffer");
+
+  pExt->image = s_egl.eglCreateImageKHR(m_eglDisplay, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, nullptr, pAttr);
+  DEBUG("eglCreateImageKHR: %llX", pExt->image);
+
+  pExt->texture = 0;
+  s_gles2.glGenTextures(1, &pExt->texture);  
+  s_gles2.glBindTexture(GL_TEXTURE_2D, pExt->texture);    
+  DEBUG("glGenTextures: %d %X", pExt->texture, s_egl.eglGetError());
+
+  s_gles2.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	s_gles2.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	s_gles2.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	s_gles2.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  s_gles2.glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, pExt->image);
+
+  s_gles2.glGenFramebuffers(1, &pExt->fbo);  
+	s_gles2.glBindFramebuffer(GL_FRAMEBUFFER, pExt->fbo);
+  DEBUG("glGenFramebuffers: %d %X", pExt->fbo, s_egl.eglGetError());
+
+	s_gles2.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pExt->texture, 0);  
+
+  GLenum status = s_gles2.glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if(status != GL_FRAMEBUFFER_COMPLETE) {        
+    DEBUG("glCheckFramebufferStatus failed. %X", status);
+    __asm__("int3");
+  }
+  
+  s_gles2.glBindTexture(GL_TEXTURE_2D, 0);  
+}
+
+// void Renderer::setWaylandRenderer(anbox::fydeos::WaylandRenderer *pWaylandRenderer){
+//   DEBUG("Renderer::setWaylandRenderer");  
+
+//   m_fydeosRenderer.insert({(EGLNativeWindowType)nullptr, pWaylandRenderer});
+//   // m_nativeWindows
+// }
+
+void Renderer::grab(int width, int height)
+{
+  GLint size = width * height * 4;
+  GLubyte *data = (GLubyte*)malloc(size);
+  s_gles2.glPixelStorei(GL_PACK_ALIGNMENT, 4);
+  // s_gles2.glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+  s_gles2.glReadPixels(0,0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+  bmp_write(data, width, height, "/tmp/test.bmp");
+
+  free(data);  
+}
+
+int Renderer::bmp_write(unsigned char *image, int xsize, int ysize, char *filename)
+{
+  {
+     unsigned char header[] = {
+        0x42, 0x4d, 0, 0, 0, 0, 0, 0, 0, 0,
+        54, 0, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 32, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0
+    };
+
+    long file_size = (long)xsize * (long)ysize * 4 + 54;
+    header[2] = (unsigned char)(file_size &0x000000ff);
+    header[3] = (file_size >> 8) & 0x000000ff;
+    header[4] = (file_size >> 16) & 0x000000ff;
+    header[5] = (file_size >> 24) & 0x000000ff;
+
+    long w = xsize;
+    header[18] = w & 0x000000ff;
+    header[19] = (w >> 8) &0x000000ff;
+    header[20] = (w >> 16) &0x000000ff;
+    header[21] = (w >> 24) &0x000000ff;
+
+    long h = ysize;
+    header[22] = h &0x000000ff;
+    header[23] = (h >> 8) &0x000000ff;
+    header[24] = (h >> 16) &0x000000ff;
+    header[25] = (h >> 24) &0x000000ff;
+
+    FILE *pfile = NULL;
+
+    pfile = fopen(filename, "wb");
+
+    fwrite(header, sizeof(unsigned char), 54, pfile);
+    int row_length, total_length;
+    row_length = xsize * 4;         // 每行数据长度大致为图象宽度乘以每像素字节数
+    row_length = (row_length % 4 != 0) ? row_length - row_length % 4 : row_length;
+    total_length = row_length * ysize;                   // 数据总长 = 每行长度 * 图象高度
+
+    fwrite(image, sizeof(unsigned char), (size_t)(long)total_length,  pfile);
+
+    // 释放内存和关闭文件
+    fclose(pfile);
+    return true;
+  }
+
+    unsigned char header[54] =
+    {
+        0x42, 0x4d, 0, 0, 0, 0, 0, 0, 0, 0,
+        54, 0, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 32, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0
+    };
+    long file_size = (long)xsize * (long)ysize * 3 + 54;
+    long width, height;
+    FILE *fp;
+
+    header[2] = (unsigned char)(file_size &0x000000ff);
+    header[3] = (file_size >> 8) & 0x000000ff;
+    header[4] = (file_size >> 16) & 0x000000ff;
+    header[5] = (file_size >> 24) & 0x000000ff;
+
+    width = xsize;
+    header[18] = width & 0x000000ff;
+    header[19] = (width >> 8) &0x000000ff;
+    header[20] = (width >> 16) &0x000000ff;
+    header[21] = (width >> 24) &0x000000ff;
+
+    height = ysize;
+    header[22] = height &0x000000ff;
+    header[23] = (height >> 8) &0x000000ff;
+    header[24] = (height >> 16) &0x000000ff;
+    header[25] = (height >> 24) &0x000000ff;
+
+    if (!(fp = fopen(filename, "wb")))
+        return -1;
+
+    // switch the image data from RGB to BGR
+    // for(unsigned long imageIdx = 0; imageIdx < file_size; imageIdx+=3)
+    // {
+    //     unsigned char tempRGB = image[imageIdx];
+    //     image[imageIdx] = image[imageIdx + 2];
+    //     image[imageIdx + 2] = tempRGB;
+    // }
+
+    fwrite(header, sizeof(unsigned char), 54, fp);
+    fwrite(image, sizeof(unsigned char), (size_t)(long)xsize * ysize * 3, fp);
+
+    fclose(fp);
+    return 0;
 }

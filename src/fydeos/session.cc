@@ -14,6 +14,8 @@
 #include "anbox/bridge/android_api_stub.h"
 #include "anbox/bridge/platform_api_skeleton.h"
 #include "anbox/bridge/platform_message_processor.h"
+// #include "anbox/dbus/bus.h"
+// #include "anbox/dbus/skeleton/service.h"
 #include "anbox/platform/base_platform.h"
 #include "anbox/application/database.h"
 #include "anbox/wm/multi_window_manager.h"
@@ -21,16 +23,15 @@
 #include "anbox/audio/server.h"
 #include "anbox/network/published_socket_connector.h"
 #include "anbox/qemu/pipe_connection_creator.h"
-#include "anbox/wm/single_window_manager.h"
-#include "anbox/platform/null/platform.h"
+// #include "anbox/wm/single_window_manager.h"
+// #include "anbox/platform/null/platform.h"
 
+#include "wayland_platform.h"
 #include "wayland_window.h"
 
 using namespace anbox;
 
-int session(){
-  Log().Init(anbox::Logger::Severity::kDebug);  
-
+int session(const std::shared_ptr<platform::BasePlatform> &platform){  
   auto trap = core::posix::trap_signals_for_process(
         {core::posix::Signal::sig_term, core::posix::Signal::sig_int});
 
@@ -47,60 +48,45 @@ int session(){
   auto rt = Runtime::create();
   auto dispatcher = anbox::common::create_dispatcher_for_runtime(rt);
 
-  std::shared_ptr<container::Client> container_ = std::make_shared<container::Client>(rt);
-  container_->register_terminate_handler([&]() {
-    WARNING("Lost connection to container manager, terminating.");
-    trap->stop();
-  });
+  // std::shared_ptr<container::Client> container_ = std::make_shared<container::Client>(rt);
+  // container_->register_terminate_handler([&]() {
+  //   WARNING("Lost connection to container manager, terminating.");
+  //   trap->stop();
+  // });
 
   auto input_manager = std::make_shared<input::Manager>(rt);
   auto android_api_stub = std::make_shared<bridge::AndroidApiStub>();
 
-  bool single_window = true;
-  platform::Configuration platform_config;
-  platform_config.single_window = single_window;
-  platform_config.no_touch_emulation = false;
-  platform_config.display_frame = anbox::graphics::Rect{0, 0, 1024, 768};
+  bool single_window = false;
+  // platform::Configuration platform_config;
+  // platform_config.single_window = single_window;
+  // platform_config.no_touch_emulation = false;
+  // platform_config.display_frame = anbox::graphics::Rect{0, 0, 1024, 768};
 
   // auto platform = platform::create(utils::get_env_value("ANBOX_PLATFORM", "sdl"),
   //                                    input_manager,
-  //                                    platform_config);
-
-  auto platform = std::make_shared<platform::NullPlatform>();
-
-  if (!platform)
-      return EXIT_FAILURE;
+  //                                    platform_config);  
 
   auto app_db = std::make_shared<application::Database>();
 
   std::shared_ptr<wm::Manager> window_manager;
   if (single_window){
-    window_manager = std::make_shared<wm::SingleWindowManager>(platform, platform_config.display_frame, app_db);
+    // window_manager = std::make_shared<wm::SingleWindowManager>(platform, platform_config.display_frame, app_db);
   }
-  // else{
-  //   window_manager = std::make_shared<wm::MultiWindowManager>(platform, android_api_stub, app_db);  
-  // }    
+  else{
+    window_manager = std::make_shared<wm::MultiWindowManager>(platform, android_api_stub, app_db);      
+  }
   
-  auto gl_driver = graphics::GLRendererServer::Config::Driver::Host;
-  // auto gl_driver = graphics::GLRendererServer::Config::Driver::Software;
-
-  graphics::GLRendererServer::Config renderer_config {
-    gl_driver,
+  auto gl_server = std::make_shared<graphics::GLRendererServer>(graphics::GLRendererServer::Config{
+    graphics::GLRendererServer::Config::Driver::Host,
     single_window
-  };
-  auto gl_server = std::make_shared<graphics::GLRendererServer>(renderer_config, window_manager);
+  }, window_manager);
 
-  platform->set_window_manager(window_manager);  
-  platform->set_renderer(gl_server->renderer());  
+  platform->set_window_manager(window_manager);    
+  platform->set_renderer(gl_server->renderer());      
   window_manager->setup();  
 
-  // auto app_manager = std::static_pointer_cast<application::Manager>(android_api_stub);
-  // if (!single_window){
-  //   app_manager = std::make_shared<application::RestrictedManager>(
-  //     android_api_stub, 
-  //     wm::Stack::Id::Freeform
-  //   );
-  // }
+  auto app_manager = std::make_shared<application::RestrictedManager>(android_api_stub, wm::Stack::Id::Freeform);    
 
   auto audio_server = std::make_shared<audio::Server>(rt, platform);
 
@@ -113,7 +99,7 @@ int session(){
           utils::string_format("%s/qemu_pipe", socket_path), rt,
           std::make_shared<qemu::PipeConnectionCreator>(gl_server->renderer(), rt));  
 
-  boost::asio::deadline_timer appmgr_start_timer(rt->service());  
+  boost::asio::deadline_timer appmgr_start_timer(rt->service());    
 
   auto bridge_connector = std::make_shared<network::PublishedSocketConnector>(
       utils::string_format("%s/anbox_bridge", socket_path), rt,
@@ -133,18 +119,17 @@ int session(){
             server->register_boot_finished_handler([&]() {              
 
               DEBUG("Android successfully booted");
-              android_api_stub->ready().set(true);
+              android_api_stub->ready().set(true);              
               appmgr_start_timer.expires_from_now(boost::posix_time::milliseconds(50));
-              appmgr_start_timer.async_wait([&](const boost::system::error_code &err) {                
-                printf("%d\n", err.value());
+              appmgr_start_timer.async_wait([&](const boost::system::error_code &err) {
                 if (err != boost::system::errc::success){                  
-                  printf("found error %d\n", err.value());
+                  DEBUG("found error %d\n", err.value());                  
                   return;
                 }
 
-                if (!single_window){
-                  return;
-                }
+                // if (!single_window){
+                //   return;
+                // }
 
                 constexpr const char *default_appmgr_package{"org.anbox.appmgr"};
                 constexpr const char *default_appmgr_component{"org.anbox.appmgr.AppViewActivity"};
@@ -154,49 +139,51 @@ int session(){
                 launch_intent.component = default_appmgr_component;
                 // As this will only be executed in single window mode we don't have
                 // to specify and launch bounds.
-                android_api_stub->launch(launch_intent, graphics::Rect::Invalid, wm::Stack::Id::Default);                
-              });
-
-              // std::thread{
-            //   [&android_api_stub](){   
-                // android::Intent intent;
-                // intent.package = "org.anbox.appmgr";
-                // intent.component = "org.anbox.appmgr.AppViewActivity";      
-
-                // android_api_stub->launch(intent, graphics::Rect::Invalid, wm::Stack::Id::Default);
-            //   }
-            // }.join();                        
+                android_api_stub->launch(
+                  launch_intent, 
+                  graphics::Rect::Invalid, 
+                  // graphics::Rect(600, 500),
+                  /*wm::Stack::Id::Default,*/ 
+                  wm::Stack::Id::Freeform);
+              });                           
             });            
 
             return std::make_shared<bridge::PlatformMessageProcessor>(
                 sender, server, pending_calls);
           }));
 
-  container::Configuration container_configuration;
-  container_configuration.extra_properties.push_back("ro.boot.fake_battery=1");
-  container_configuration.bind_mounts = {
-        {qemu_pipe_connector->socket_file(), "/dev/qemu_pipe"},
-        {bridge_connector->socket_file(), "/dev/anbox_bridge"},
-        {audio_server->socket_file(), "/dev/anbox_audio"},
-        {SystemConfiguration::instance().input_device_dir(), "/dev/input"},
+  // container::Configuration container_configuration;
+  // container_configuration.extra_properties.push_back("ro.boot.fake_battery=1");
+  // container_configuration.bind_mounts = {
+  //       {qemu_pipe_connector->socket_file(), "/dev/qemu_pipe"},
+  //       {bridge_connector->socket_file(), "/dev/anbox_bridge"},
+  //       {audio_server->socket_file(), "/dev/anbox_audio"},
+  //       {SystemConfiguration::instance().input_device_dir(), "/dev/input"},
 
-      };
+  //     };
 
-  container_configuration.devices = {
-    {"/dev/binder", {0666}},
-    {"/dev/ashmem", {0666}},
-    {"/dev/fuse", {0666}},
-  };
+  // container_configuration.devices = {
+  //   {"/dev/binder", {0666}},
+  //   {"/dev/ashmem", {0666}},
+  //   {"/dev/fuse", {0666}},
+  // };
 
   // dispatcher->dispatch([&]() {
   //   container_->start(container_configuration);
   // });
 
   // auto bus_type = anbox::dbus::Bus::Type::Session;
+  // if (use_system_dbus_)
+  //   bus_type = anbox::dbus::Bus::Type::System;
   // auto bus = std::make_shared<anbox::dbus::Bus>(bus_type);
 
   // auto skeleton = anbox::dbus::skeleton::Service::create_for_bus(bus, app_manager);
   // bus->run_async();  
+
+  chmod("/run/chrome/anbox/sockets/anbox_bridge", S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+  chmod("/run/chrome/anbox/sockets/qemu_pipe", S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+  chown("/run/chrome/anbox/sockets/anbox_bridge", 655360, 655360);
+  chown("/run/chrome/anbox/sockets/qemu_pipe", 655360, 655360);
 
   rt->start();    
   trap->run();
@@ -206,17 +193,14 @@ int session(){
   return 0;
 }
 
-int main(int argc, char** argv) {
-  // base::AtExitManager exit_manager;
-  // base::CommandLine::Init(argc, argv);
-  // base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-  // exo::wayland::clients::ClientBase::InitParams params;
-  // if (!params.FromCommandLine(*command_line))
-  //   return 1;
+int main(int argc, char** argv) {  
+  Log().Init(anbox::Logger::Severity::kDebug);  
 
-  auto w1 = new WaylandWindow();
+  DEBUG("main thread: %llX", pthread_self());
 
-  session();
+  auto platform = std::make_shared<anbox::WaylandPlatform>();
+
+  session(platform);
 
   return 0;
 }

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 
+#include "anbox/container/service.h"
 #include "anbox/common/loop_device_allocator.h"
 #include "anbox/logger.h"
 #include "anbox/runtime.h"
@@ -22,19 +23,20 @@ using namespace anbox;
 namespace fs = boost::filesystem;
 
 namespace {
-constexpr unsigned int unprivileged_user_id{655350};
+// constexpr unsigned int unprivileged_user_id{655360};
+constexpr unsigned int unprivileged_user_id{656360};
 }
 
 std::string android_img_path_;
 std::string data_path_;
 //std::shared_ptr<common::LoopDevice> android_img_loop_dev_;
 std::vector<std::shared_ptr<common::MountEntry>> mounts_;
-// bool privileged_ = false;
+bool privileged_ = true;
 // bool daemon_ = false;
 bool enable_rootfs_overlay_ = false;
-// std::string container_network_address_;
-// std::string container_network_gateway_;
-// std::string container_network_dns_servers_;
+std::string container_network_address_;
+std::string container_network_gateway_;
+std::string container_network_dns_servers_;
 
 bool setup_rootfs_overlay() {
   const auto combined_rootfs_path = SystemConfiguration::instance().combined_rootfs_dir();

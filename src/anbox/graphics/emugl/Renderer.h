@@ -27,6 +27,8 @@
 #include "anbox/graphics/program_family.h"
 #include "anbox/graphics/renderer.h"
 
+#include "fydeos/renderer.h"
+
 #include <EGL/egl.h>
 
 #include <map>
@@ -71,7 +73,7 @@ struct RendererWindow;
 // There is only one global instance, that can be retrieved with getFB(),
 // and which must be previously setup by calling initialize().
 //
-class Renderer : public anbox::graphics::Renderer {
+class Renderer : public anbox::graphics::Renderer, public anbox::fydeos::Renderer {
  public:
   Renderer();
   virtual ~Renderer();
@@ -238,12 +240,19 @@ class Renderer : public anbox::graphics::Renderer {
 
   // Used internally.
   bool bind_locked();
-  bool unbind_locked();
+  bool unbind_locked(RendererWindow *pWindow = nullptr, anbox::fydeos::Buffer_Ext *pExt = nullptr);
+
+public:
+  void createFydeBuffer(anbox::fydeos::Buffer_Ext *pExt, EGLint *pAttr) override;  
+  // void setWaylandRenderer(anbox::fydeos::WaylandRenderer *pWaylandRenderer) override;
+
+  void grab(int width, int height);
+  int bmp_write(unsigned char *image, int xsize, int ysize, char *filename);
 
  private:
   HandleType genHandle();
 
-  bool bindWindow_locked(RendererWindow* window);
+  bool bindWindow_locked(RendererWindow* window, anbox::fydeos::Buffer_Ext **ppExt);
 
   void setupViewport(RendererWindow* window, const anbox::graphics::Rect& rect);
   struct Program;
@@ -284,7 +293,7 @@ class Renderer : public anbox::graphics::Renderer {
   const char* m_glRenderer;
   const char* m_glVersion;
 
-  std::map<EGLNativeWindowType, RendererWindow*> m_nativeWindows;
+  std::map<EGLNativeWindowType, RendererWindow*> m_nativeWindows;  
 
   anbox::graphics::ProgramFamily m_family;
   struct Program {
@@ -308,6 +317,6 @@ class Renderer : public anbox::graphics::Renderer {
 
   static const GLchar* const vshader;
   static const GLchar* const defaultFShader;
-  static const GLchar* const alphaFShader;
+  static const GLchar* const alphaFShader;  
 };
 #endif
