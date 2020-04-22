@@ -456,6 +456,9 @@ add_library(chromium-wayland
     ./wayland_platform.cc
     ./wayland_window.cc
     ./wayland_helper.cc
+    ./wayland_pointer.cc
+    ./wayland_keyboard.cc
+    ./wayland_touch.cc
 )
 target_link_libraries(
   chromium-wayland
