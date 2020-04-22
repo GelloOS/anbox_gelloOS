@@ -39,6 +39,7 @@ DEFAULT_DELETER_FDECL(wl_compositor)
 DEFAULT_DELETER_FDECL(wl_display)
 DEFAULT_DELETER_FDECL(wl_event_queue)
 DEFAULT_DELETER_FDECL(wl_pointer)
+DEFAULT_DELETER_FDECL(wl_keyboard)
 DEFAULT_DELETER_FDECL(wl_region)
 DEFAULT_DELETER_FDECL(wl_registry)
 DEFAULT_DELETER_FDECL(wl_seat)
@@ -99,7 +100,7 @@ struct Globals {
   std::unique_ptr<zwp_linux_explicit_synchronization_v1> linux_explicit_synchronization;
   std::unique_ptr<zcr_remote_shell_v1> remote_shell;
   std::unique_ptr<wp_viewporter> viewporter;
-  std::unique_ptr<zxdg_shell_v6> zxdg_shell;
+  std::unique_ptr<zxdg_shell_v6> zxdg_shell;  
   
   // std::unique_ptr<zcr_vsync_feedback_v1> vsync_feedback;
 };
