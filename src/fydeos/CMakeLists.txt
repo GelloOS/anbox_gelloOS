@@ -276,7 +276,7 @@ set(SOURCES
     ../anbox/network/tcp_socket_messenger.cpp
     ../anbox/network/tcp_socket_messenger.h
 
-    ../anbox/platform/base_platform.cpp
+    #../anbox/platform/base_platform.cpp
     ../anbox/platform/base_platform.h
     ../anbox/platform/null/platform.cpp
     ../anbox/platform/null/platform.h
