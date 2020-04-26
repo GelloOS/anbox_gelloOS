@@ -9,12 +9,16 @@
 #include <unistd.h>
 #include <xf86drm.h>
 
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+
 // #include <sys/types.h>
 // #include <sys/stat.h>
 // #include <fcntl.h>
 
 #include "renderer.h"
 #include "wayland_helper.h"
+#include "anbox_input.h"
 
 // #include "ui/gfx/geometry/size.h"
 // #include "base/strings/stringprintf.h"
@@ -24,6 +28,7 @@
 
 #include "../anbox/logger.h"
 #include "../anbox/wm/window.h"
+#include "../anbox/wm/manager.h"
 #include "../anbox/graphics/renderer.h"
 // #include "external/android-emugl/host/include/OpenGLESDispatch/EGLDispatch.h"
 
@@ -60,8 +65,10 @@ public:
   // std::unique_ptr<wl_egl_window> window_;
   // std::unique_ptr<wl_shell_surface> shell_surface_;
   std::unique_ptr<zcr_remote_surface_v1> remote_shell_surface_;
+  std::unique_ptr<zcr_input_method_surface_v1> input_surface_;
   std::thread message_thread_;
   anbox::wm::Task::Id task_;
+  std::shared_ptr<wm::Manager> window_manager_;
 
   // std::shared_ptr<anbox::graphics::Renderer> renderer_;
   // std::shared_ptr<Renderer> renderer_;
@@ -83,16 +90,20 @@ public:
   std::vector<std::unique_ptr<Buffer>> buffers_;
   bool y_invert_ = true;
 
+  anbox::graphics::Rect current_rect_;
+
 public:
   WaylandWindow(
     const ::fydeos::Globals &globals,
-    const std::shared_ptr<wl_display> &display,    
+    const std::shared_ptr<wl_display> &display,
+    const std::shared_ptr<wm::Manager> &window_manager,
     const std::shared_ptr<Renderer> &renderer,
     const anbox::wm::Task::Id &task, 
     const anbox::graphics::Rect &frame, 
     const std::string &title);
   
-  virtual ~WaylandWindow(){
+  virtual ~WaylandWindow(){    
+    DEBUG("WaylandWindow::~WaylandWindow");
     __asm__("int3");
   }
 
@@ -132,7 +143,126 @@ private:
                                           int32_t bo_usage,
                                           bool y_invert);
 
-  Buffer* DequeueBuffer();                                        
+  Buffer* DequeueBuffer();          
+
+public:
+  static WaylandWindow* getWindowFromSurface(wl_surface *surface){
+    return static_cast<WaylandWindow*>(wl_proxy_get_user_data(reinterpret_cast<wl_proxy*>(surface)));
+  }
+
+private:
+  static void shell_activated(void *data,
+			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+			  struct wl_surface *gained_active,
+			  struct wl_surface *lost_active);                                
+
+  static void shell_configuration_changed(void *data,
+				      struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+				      int32_t width,
+				      int32_t height,
+				      int32_t transform,
+				      wl_fixed_t scale_factor,
+				      int32_t work_area_inset_left,
+				      int32_t work_area_inset_top,
+				      int32_t work_area_inset_right,
+				      int32_t work_area_inset_bottom,
+				      uint32_t layout_mode);      
+
+  static void shell_workspace(void *data,
+			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+			  uint32_t display_id_hi,
+			  uint32_t display_id_lo,
+			  int32_t x,
+			  int32_t y,
+			  int32_t width,
+			  int32_t height,
+			  int32_t inset_left,
+			  int32_t inset_top,
+			  int32_t inset_right,
+			  int32_t inset_bottom,
+			  int32_t transform,
+			  wl_fixed_t scale_factor,
+			  uint32_t is_internal);            
+
+  static void shell_configure(void *data,
+			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+			  uint32_t layout_mode);      
+
+  static void shell_default_device_scale_factor(void *data,
+          struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+          int32_t scale);      
+
+  static void shell_display_info(void *data,
+			     struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+			     uint32_t display_id_hi,
+			     uint32_t display_id_lo,
+			     int32_t width,
+			     int32_t height,
+			     struct wl_array *identification_data);        
+  static void shell_workspace_info(void *data,
+			       struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+			       uint32_t display_id_hi,
+			       uint32_t display_id_lo,
+			       int32_t x,
+			       int32_t y,
+			       int32_t width,
+			       int32_t height,
+			       int32_t inset_left,
+			       int32_t inset_top,
+			       int32_t inset_right,
+			       int32_t inset_bottom,
+			       int32_t stable_inset_left,
+			       int32_t stable_inset_top,
+			       int32_t stable_inset_right,
+			       int32_t stable_inset_bottom,
+			       int32_t systemui_visibility,
+			       int32_t transform,
+			       uint32_t is_internal,
+			       struct wl_array *identification_data);      
+
+  static void shell_surface_close(void *data,
+		      struct zcr_remote_surface_v1 *zcr_remote_surface_v1);              
+
+  static void shell_surface_state_type_changed(void *data,
+				   struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+				   uint32_t state_type);   
+
+  static void shell_surface_configure(void *data,
+			  struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+			  int32_t origin_offset_x,
+			  int32_t origin_offset_y,
+			  struct wl_array *states,
+			  uint32_t serial);        
+
+  static void shell_surface_window_geometry_changed(void *data,
+					struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+					int32_t x,
+					int32_t y,
+					int32_t width,
+					int32_t height);            
+
+  static void shell_surface_bounds_changed(void *data,
+			       struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+			       uint32_t display_id_hi,
+			       uint32_t display_id_lo,
+			       int32_t x,
+			       int32_t y,
+			       int32_t width,
+			       int32_t height,
+			       uint32_t bounds_change_reason);      
+  static void shell_surface_drag_started(void *data,
+			     struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+			     uint32_t direction);         
+
+  static void shell_surface_drag_finished(void *data,
+			      struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+			      int32_t x,
+			      int32_t y,
+			      int32_t canceled);             
+
+  static void shell_surface_change_zoom_level(void *data,
+				  struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+				  int32_t change);          
 };
 
 }

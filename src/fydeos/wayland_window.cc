@@ -1,5 +1,3 @@
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
 #include "wayland_window.h"
 
 // #include "base/syslog_logging.h"
@@ -87,249 +85,19 @@ void FrameCallback(void* data, wl_callback* callback, uint32_t time) {
 //   //           << ". Interval: " << interval << std::endl;
 // }
 
-void shell_activated(void *data,
-			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-			  struct wl_surface *gained_active,
-			  struct wl_surface *lost_active){
-          DEBUG("shell_listener activated");
-    }
-
-void shell_configuration_changed(void *data,
-				      struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-				      int32_t width,
-				      int32_t height,
-				      int32_t transform,
-				      wl_fixed_t scale_factor,
-				      int32_t work_area_inset_left,
-				      int32_t work_area_inset_top,
-				      int32_t work_area_inset_right,
-				      int32_t work_area_inset_bottom,
-				      uint32_t layout_mode){
-DEBUG("shell_listener configuration_changed");
-    }
-
-void shell_workspace(void *data,
-			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-			  uint32_t display_id_hi,
-			  uint32_t display_id_lo,
-			  int32_t x,
-			  int32_t y,
-			  int32_t width,
-			  int32_t height,
-			  int32_t inset_left,
-			  int32_t inset_top,
-			  int32_t inset_right,
-			  int32_t inset_bottom,
-			  int32_t transform,
-			  wl_fixed_t scale_factor,
-			  uint32_t is_internal){
-          DEBUG("shell_listener workspace");
-}
-
-void shell_configure(void *data,
-			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-			  uint32_t layout_mode){
-          DEBUG("shell_listener configure");
-}
-
-void shell_default_device_scale_factor(void *data,
-          struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-          int32_t scale){
-            DEBUG("shell_listener default_device_scale_factor");
-}
-
-void shell_display_info(void *data,
-			     struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-			     uint32_t display_id_hi,
-			     uint32_t display_id_lo,
-			     int32_t width,
-			     int32_t height,
-			     struct wl_array *identification_data){
-  DEBUG("shell_listener display_info");
-  return;
-
-  WaylandWindow *window = (WaylandWindow *)data;
-
-  zcr_remote_surface_v1_set_title(window->remote_shell_surface_.get(), "title");
-  zcr_remote_surface_v1_set_extra_title(window->remote_shell_surface_.get(), "title2");
-  zcr_remote_surface_v1_set_window_type(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_WINDOW_TYPE_NORMAL);
-  zcr_remote_surface_v1_set_frame(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_FRAME_TYPE_AUTOHIDE);  
-  zcr_remote_surface_v1_set_bounds(window->remote_shell_surface_.get(), display_id_hi, display_id_lo, 0, 0, window->width_, window->height_);
-  zcr_remote_surface_v1_set_top_inset(window->remote_shell_surface_.get(), 33);
-  zcr_remote_surface_v1_set_frame_buttons(window->remote_shell_surface_.get(), 
-    ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE, 
-    ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE
-  );
-  zcr_remote_surface_v1_set_orientation(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_ORIENTATION_LANDSCAPE);
-  zcr_remote_surface_v1_set_scale(window->remote_shell_surface_.get(), window->scale_);
-
-  std::unique_ptr<zaura_surface> aura_surface(
-    static_cast<zaura_surface*>(zaura_shell_get_aura_surface(window->globals_.aura_shell.get(), window->surface_.get()))
-  );  
-
-  zaura_surface_set_frame(aura_surface.get(), ZAURA_SURFACE_FRAME_TYPE_NORMAL);
-  zaura_surface_set_frame_colors(aura_surface.get(), 0, 0);
-}
-
-void shell_workspace_info(void *data,
-			       struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-			       uint32_t display_id_hi,
-			       uint32_t display_id_lo,
-			       int32_t x,
-			       int32_t y,
-			       int32_t width,
-			       int32_t height,
-			       int32_t inset_left,
-			       int32_t inset_top,
-			       int32_t inset_right,
-			       int32_t inset_bottom,
-			       int32_t stable_inset_left,
-			       int32_t stable_inset_top,
-			       int32_t stable_inset_right,
-			       int32_t stable_inset_bottom,
-			       int32_t systemui_visibility,
-			       int32_t transform,
-			       uint32_t is_internal,
-			       struct wl_array *identification_data){
-  DEBUG("shell_listener workspace_info");    
-  return;
-
-  WaylandWindow *window = (WaylandWindow *)data;
-
-  zcr_remote_surface_v1_set_title(window->remote_shell_surface_.get(), "title");  
-  // zcr_remote_surface_v1_set_extra_title(window->remote_shell_surface_.get(), "title2");
-  zcr_remote_surface_v1_set_window_type(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_WINDOW_TYPE_NORMAL);
-  zcr_remote_surface_v1_set_frame(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_FRAME_TYPE_AUTOHIDE);    
-  zcr_remote_surface_v1_set_rectangular_surface_shadow(window->remote_shell_surface_.get(), 0, 0, -1, -1);    
-  zcr_remote_surface_v1_set_bounds(window->remote_shell_surface_.get(), display_id_hi, display_id_lo, 0, 0, window->width_, window->height_);  
-  zcr_remote_surface_v1_set_aspect_ratio(window->remote_shell_surface_.get(), 0, 0);
-  zcr_remote_surface_v1_set_top_inset(window->remote_shell_surface_.get(), 33);
-  zcr_remote_surface_v1_set_frame_buttons(window->remote_shell_surface_.get(), 
-    ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE, 
-    ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE
-  );  
-  zcr_remote_surface_v1_set_orientation(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_ORIENTATION_LANDSCAPE);  
-  // zcr_remote_surface_v1_set_scale(window->remote_shell_surface_.get(), window->scale_);
-
-  std::unique_ptr<zaura_surface> aura_surface(
-    static_cast<zaura_surface*>(zaura_shell_get_aura_surface(window->globals_.aura_shell.get(), window->surface_.get()))
-  );  
-
-  zaura_surface_set_frame(aura_surface.get(), ZAURA_SURFACE_FRAME_TYPE_NORMAL);
-  zaura_surface_set_frame_colors(aura_surface.get(), 0, 0);
-
-  // DEBUG("wl_display_flush");
-  // wl_display_flush(window->display_.get());  
-}	
-
-void shell_surface_close(void *data,
-		      struct zcr_remote_surface_v1 *zcr_remote_surface_v1){
-            DEBUG("surface_listener close");
-}
-
-void shell_surface_state_type_changed(void *data,
-				   struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
-				   uint32_t state_type){
-             DEBUG("surface_listener state_type_changed");
-}
-
-void shell_surface_configure(void *data,
-			  struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
-			  int32_t origin_offset_x,
-			  int32_t origin_offset_y,
-			  struct wl_array *states,
-			  uint32_t serial){
-          DEBUG("surface_listener configure");
-}
-
-void shell_surface_window_geometry_changed(void *data,
-					struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
-					int32_t x,
-					int32_t y,
-					int32_t width,
-					int32_t height){
-  DEBUG("surface_listener window_geometry_changed %d %d %d %d", x, y, width, height);
-}
-
-void shell_surface_bounds_changed(void *data,
-			       struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
-			       uint32_t display_id_hi,
-			       uint32_t display_id_lo,
-			       int32_t x,
-			       int32_t y,
-			       int32_t width,
-			       int32_t height,
-			       uint32_t bounds_change_reason){
-               DEBUG("surface_listener bounds_changed");
-}
-
-void shell_surface_drag_started(void *data,
-			     struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
-			     uint32_t direction){
-             DEBUG("surface_listener drag_started");
-}
-
-void shell_surface_drag_finished(void *data,
-			      struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
-			      int32_t x,
-			      int32_t y,
-			      int32_t canceled){
-              DEBUG("surface_listener drag_finished");
-}
-
-void shell_surface_change_zoom_level(void *data,
-				  struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
-				  int32_t change){
-            DEBUG("surface_listener change_zoom_level");
-}
-
-zcr_remote_shell_v1_listener g_shell_listener = {
-  shell_activated,    
-  shell_configuration_changed,
-  shell_workspace,
-  shell_configure,
-  shell_default_device_scale_factor,
-  shell_display_info,
-  shell_workspace_info
-};
-zcr_remote_surface_v1_listener g_surface_listener = {
-  shell_surface_close, 
-  shell_surface_state_type_changed,
-  shell_surface_configure,  
-  shell_surface_window_geometry_changed, 
-  shell_surface_bounds_changed,
-  shell_surface_drag_started,
-  shell_surface_drag_finished,
-  shell_surface_change_zoom_level
-};
-
-wl_seat_listener seat_listener = {
-  [](void *data, struct wl_seat *wl_seat, uint32_t capabilities){
-    WaylandWindow *window = (WaylandWindow *)data;
-    DEBUG("capabilities");
-
-    __asm__("int3");
-
-    if (capabilities & WL_SEAT_CAPABILITY_POINTER){      
-      wl_pointer* pointer = wl_seat_get_pointer(window->globals_.seat.get());      
-    }
-  },
-  [](void *data, struct wl_seat *wl_seat, const char *name){
-    DEBUG("name");
-    __asm__("int3");
-  }
-};
 
 WaylandWindow::WaylandWindow(
   const ::fydeos::Globals &globals,
   const std::shared_ptr<wl_display> &display,
+  const std::shared_ptr<wm::Manager> &window_manager,
   const std::shared_ptr<Renderer> &renderer,
   const anbox::wm::Task::Id &task, 
   const anbox::graphics::Rect &frame, 
   const std::string &title):
     display_(display),
     globals_(globals),
-    task_(task),    
+    window_manager_(window_manager),
+    task_(task),
     wm::Window(renderer, task, frame, title){  
 
   width_ = frame.width();
@@ -478,6 +246,10 @@ bool WaylandWindow::init(){
     return false;
   }
 
+  wl_surface_set_buffer_scale(surface_.get(), scale_);
+  wl_surface_set_buffer_transform(surface_.get(), transform_);  
+  wl_surface_set_user_data(surface_.get(), this);
+
   std::unique_ptr<wp_viewport> viewport(
     wp_viewporter_get_viewport(globals_.viewporter.get(), surface_.get())
   );
@@ -495,35 +267,47 @@ bool WaylandWindow::init(){
 
     wl_region_add(opaque_region.get(), 0, 0, width_, height_);
     wl_surface_set_opaque_region(surface_.get(), opaque_region.get());
-    // wl_surface_set_input_region(surface_.get(), opaque_region.get());
+    // wl_surface_set_input_region(surface_.get(), opaque_region.get());    
   }  
 
-  zcr_remote_shell_v1_add_listener(globals_.remote_shell.get(), &g_shell_listener, this);      
-
-  // std::unique_ptr<wl_shell_surface> shell_surface(
-  //   static_cast<wl_shell_surface*>(wl_shell_get_shell_surface(globals_.shell.get(), surface_.get()))
-  // );    
+#if 1
+  static zcr_remote_shell_v1_listener shell_listener = {
+    WaylandWindow::shell_activated,    
+    WaylandWindow::shell_configuration_changed,
+    WaylandWindow::shell_workspace,
+    WaylandWindow::shell_configure,
+    WaylandWindow::shell_default_device_scale_factor,
+    WaylandWindow::shell_display_info,
+    WaylandWindow::shell_workspace_info
+  };
+  zcr_remote_shell_v1_add_listener(globals_.remote_shell.get(), &shell_listener, this);        
 
   remote_shell_surface_.reset(
     zcr_remote_shell_v1_get_remote_surface(globals_.remote_shell.get(), surface_.get(), ZCR_REMOTE_SHELL_V1_CONTAINER_DEFAULT)
   );    
   
-  zcr_remote_surface_v1_add_listener(remote_shell_surface_.get(), &g_surface_listener, this);      
-  // wl_display_flush(display_.get());
-
-  // pointer_.reset(wl_seat_get_pointer(globals_.seat.get()));
-  wl_seat_add_listener(globals_.seat.get(), &seat_listener, this);
-  
-
-  if (1){  
-  zcr_remote_surface_v1_set_title(remote_shell_surface_.get(), "title");  
+  static zcr_remote_surface_v1_listener surface_listener = {
+    WaylandWindow::shell_surface_close, 
+    WaylandWindow::shell_surface_state_type_changed,
+    WaylandWindow::shell_surface_configure,  
+    WaylandWindow::shell_surface_window_geometry_changed, 
+    WaylandWindow::shell_surface_bounds_changed,
+    WaylandWindow::shell_surface_drag_started,
+    WaylandWindow::shell_surface_drag_finished,
+    WaylandWindow::shell_surface_change_zoom_level
+  };
+  zcr_remote_surface_v1_add_listener(remote_shell_surface_.get(), &surface_listener, this);      
+  // wl_display_flush(display_.get());  
+    
+  zcr_remote_surface_v1_set_title(remote_shell_surface_.get(), title().data());
   // zcr_remote_surface_v1_set_extra_title(remote_shell_surface_.get(), "title2");
   zcr_remote_surface_v1_set_window_type(remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_WINDOW_TYPE_NORMAL);
   zcr_remote_surface_v1_set_frame(remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_FRAME_TYPE_AUTOHIDE);    
-  zcr_remote_surface_v1_set_rectangular_surface_shadow(remote_shell_surface_.get(), 0, 0, -1, -1);    
-  zcr_remote_surface_v1_set_bounds(remote_shell_surface_.get(), 0, 0, 0, 0, width_, height_);
+  //zcr_remote_surface_v1_set_rectangular_surface_shadow(remote_shell_surface_.get(), 0, 0, -1, -1);    
+  // zcr_remote_surface_v1_set_bounds(remote_shell_surface_.get(), 0, 0, 0, 0, width_, height_);  
   zcr_remote_surface_v1_set_aspect_ratio(remote_shell_surface_.get(), 0, 0);
-  zcr_remote_surface_v1_set_top_inset(remote_shell_surface_.get(), 33);
+  // zcr_remote_surface_v1_set_top_inset(remote_shell_surface_.get(), 60);
+  zcr_remote_surface_v1_set_top_inset(remote_shell_surface_.get(), 32);
   zcr_remote_surface_v1_set_frame_buttons(remote_shell_surface_.get(), 
     ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE, 
     ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE
@@ -537,33 +321,31 @@ bool WaylandWindow::init(){
 
   zaura_surface_set_frame(aura_surface.get(), ZAURA_SURFACE_FRAME_TYPE_NORMAL);
   zaura_surface_set_frame_colors(aura_surface.get(), 0, 0);
-  }
+
   // zcr_remote_surface_v1_ack_configure(remote_shell_surface_.get(), 1);
 
-  // std::unique_ptr<zcr_input_method_surface_v1> input_surface(
+  // input_surface_.reset(
   //   zcr_remote_shell_v1_get_input_method_surface(globals_.remote_shell.get(), surface_.get())
   // );
 
-  
+  // zcr_input_method_surface_v1_set_bounds(input_surface_.get(), 0, 0, 0, 0, width_, height_);
+
 
   // DEBUG("zcr_remote_surface_v1: %llX", remote_shell_surface_.get());
 
-  // zcr_remote_surface_v1_set_min_size(remote_shell_surface_.get(), width_, height_);
-  // zcr_remote_surface_v1_set_window_type(remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_WINDOW_TYPE_NORMAL);
-  // zcr_remote_surface_v1_set_frame(remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_FRAME_TYPE_NORMAL);  
+  // zcr_remote_surface_v1_set_min_size(remote_shell_surface_.get(), width_, height_);    
   // zcr_remote_surface_v1_activate(remote_shell_surface_.get(), 1);
 
   // zcr_remote_surface_v1_set_window_geometry(remote_shell_surface_.get(), 0, 0, width_, height_);
   // zcr_remote_surface_v1_set_scale(remote_shell_surface_.get(), 1);
+#else  
+  std::unique_ptr<wl_shell_surface> shell_surface(
+    static_cast<wl_shell_surface*>(wl_shell_get_shell_surface(globals_.shell.get(), surface_.get()))
+  );
 
-    
-  
-  
-  
-  // wl_shell_surface_set_title(shell_surface.get(), "title");
-
-  
-  // wl_shell_surface_set_toplevel(shell_surface.get());
+  wl_shell_surface_set_title(shell_surface.get(), "title");
+  wl_shell_surface_set_toplevel(shell_surface.get());
+#endif    
 
   // if (params.use_touch) {
   //   static wl_touch_listener kTouchListener = {
@@ -612,7 +394,7 @@ std::unique_ptr<WaylandWindow::Buffer> WaylandWindow::CreateBuffer(
     int32_t drm_format,
     int32_t bo_usage) {
 
-  DEBUG("WaylandWindow::CreateBuffer %d %d %x %x", width, height, drm_format, bo_usage);
+  // DEBUG("WaylandWindow::CreateBuffer %d %d %x %x", width, height, drm_format, bo_usage);
 
   std::unique_ptr<Buffer> buffer;
 #if defined(USE_GBM)
@@ -624,7 +406,7 @@ std::unique_ptr<WaylandWindow::Buffer> WaylandWindow::CreateBuffer(
   static wl_buffer_listener buffer_listener = {
     [](void* data, wl_buffer* /* buffer */) {  
       WaylandWindow::Buffer* buffer = static_cast<WaylandWindow::Buffer*>(data);
-      DEBUG("BufferRelease %llX %llX", buffer, &buffer->ext);
+      // DEBUG("BufferRelease %llX %llX", buffer, &buffer->ext);
 
       buffer->busy = false;
     }
@@ -656,7 +438,7 @@ std::unique_ptr<WaylandWindow::Buffer> WaylandWindow::CreateDrmBuffer(
       uint32_t stride = gbm_bo_get_stride_for_plane(buffer->bo.get(), i);
       uint32_t offset = gbm_bo_get_offset(buffer->bo.get(), i);
 
-      DEBUG("zwp_linux_buffer_params_v1_add %d %d %d %d", fd, i, offset, stride);
+      // DEBUG("zwp_linux_buffer_params_v1_add %d %d %d %d", fd, i, offset, stride);
       zwp_linux_buffer_params_v1_add(buffer->params.get(), fd, i, offset, stride, 0, 0);
 
       close(fd);
@@ -666,7 +448,7 @@ std::unique_ptr<WaylandWindow::Buffer> WaylandWindow::CreateDrmBuffer(
     if (y_invert)
       flags |= ZWP_LINUX_BUFFER_PARAMS_V1_FLAGS_Y_INVERT;
 
-    DEBUG("zwp_linux_buffer_params_v1_create_immed %d %d %08X %08X", width, height, drm_format, flags);
+    // DEBUG("zwp_linux_buffer_params_v1_create_immed %d %d %08X %08X", width, height, drm_format, flags);
     buffer->buffer.reset(
       zwp_linux_buffer_params_v1_create_immed(buffer->params.get(), width, height, drm_format, flags)
     );
@@ -750,7 +532,7 @@ anbox::fydeos::Buffer_Ext* WaylandWindow::bind(){
     __asm__("int3");
   }
 
-  DEBUG("WaylandWindow::bind thread: %llX %llX %llX", pthread_self(), buffer, &buffer->ext);  
+  // DEBUG("WaylandWindow::bind thread: %llX %llX %llX", pthread_self(), buffer, &buffer->ext);  
 
   return &buffer->ext;
 }
@@ -772,10 +554,10 @@ void WaylandWindow::unbind(anbox::fydeos::Buffer_Ext *pExt){
     __asm__("int3");        
   }
 
-  DEBUG("WaylandWindow::unbind %llX %llX %llX %llX", display_.get(), pthread_self(), buffer_it->get(), pExt);
+  // DEBUG("WaylandWindow::unbind %llX %llX %llX %llX", display_.get(), pthread_self(), buffer_it->get(), pExt);
 
-  wl_surface_set_buffer_scale(surface_.get(), scale_);  
-  wl_surface_set_buffer_transform(surface_.get(), transform_);  
+  // wl_surface_set_buffer_scale(surface_.get(), scale_);
+  // wl_surface_set_buffer_transform(surface_.get(), transform_);  
   wl_surface_damage(surface_.get(), 0, 0, width_, height_);
   wl_surface_attach(surface_.get(), buffer_it->get()->buffer.get(), 0, 0);
 
@@ -811,6 +593,247 @@ void WaylandWindow::unbind(anbox::fydeos::Buffer_Ext *pExt){
   wl_display_flush(display_.get());  
  
   // wl_display_dispatch(display_.get());
+}
+
+void WaylandWindow::shell_activated(void *data,
+			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+			  struct wl_surface *gained_active,
+			  struct wl_surface *lost_active){  
+  // WaylandWindow *window = (WaylandWindow *)data;  
+
+  if (gained_active == nullptr){
+    return;
+  }
+
+  WaylandWindow *window = (WaylandWindow *)wl_surface_get_user_data(gained_active);
+
+  DEBUG("shell_listener activated %llX %llX %llX", window->surface_.get(), gained_active, lost_active);
+  window->window_manager_->set_focused_task(window->task());
+  return;
+  
+
+  if (window->surface_.get() == gained_active){ 
+    DEBUG("shell_listener activated %d", window->task()); 
+    window->window_manager_->set_focused_task(window->task());
+  }
+}
+
+void WaylandWindow::shell_configuration_changed(void *data,
+				      struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+				      int32_t width,
+				      int32_t height,
+				      int32_t transform,
+				      wl_fixed_t scale_factor,
+				      int32_t work_area_inset_left,
+				      int32_t work_area_inset_top,
+				      int32_t work_area_inset_right,
+				      int32_t work_area_inset_bottom,
+				      uint32_t layout_mode){
+  DEBUG("shell_listener configuration_changed %d %d", width, height);
+  __asm__("int3");
+}
+
+void WaylandWindow::shell_workspace(void *data,
+			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+			  uint32_t display_id_hi,
+			  uint32_t display_id_lo,
+			  int32_t x,
+			  int32_t y,
+			  int32_t width,
+			  int32_t height,
+			  int32_t inset_left,
+			  int32_t inset_top,
+			  int32_t inset_right,
+			  int32_t inset_bottom,
+			  int32_t transform,
+			  wl_fixed_t scale_factor,
+			  uint32_t is_internal){
+  DEBUG("shell_listener workspace %d %d %d %d", x, y, width, height);
+  __asm__("int3");
+}
+
+void WaylandWindow::shell_configure(void *data,
+			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+			  uint32_t layout_mode){
+          DEBUG("shell_listener configure");
+}
+
+void WaylandWindow::shell_default_device_scale_factor(void *data,
+          struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+          int32_t scale){
+            DEBUG("shell_listener default_device_scale_factor");
+}
+
+void WaylandWindow::shell_display_info(void *data,
+			     struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+			     uint32_t display_id_hi,
+			     uint32_t display_id_lo,
+			     int32_t width,
+			     int32_t height,
+			     struct wl_array *identification_data){
+  DEBUG("shell_listener display_info %d %d", width, height);
+  __asm__("int3");
+  return;
+
+  // WaylandWindow *window = (WaylandWindow *)data;
+
+  // zcr_remote_surface_v1_set_title(window->remote_shell_surface_.get(), "title");
+  // zcr_remote_surface_v1_set_extra_title(window->remote_shell_surface_.get(), "title2");
+  // zcr_remote_surface_v1_set_window_type(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_WINDOW_TYPE_NORMAL);
+  // zcr_remote_surface_v1_set_frame(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_FRAME_TYPE_AUTOHIDE);  
+  // zcr_remote_surface_v1_set_bounds(window->remote_shell_surface_.get(), display_id_hi, display_id_lo, 0, 0, window->width_, window->height_);
+  // zcr_remote_surface_v1_set_top_inset(window->remote_shell_surface_.get(), 33);
+  // zcr_remote_surface_v1_set_frame_buttons(window->remote_shell_surface_.get(), 
+  //   ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE, 
+  //   ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE
+  // );
+  // zcr_remote_surface_v1_set_orientation(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_ORIENTATION_LANDSCAPE);
+  // zcr_remote_surface_v1_set_scale(window->remote_shell_surface_.get(), window->scale_);
+
+  // std::unique_ptr<zaura_surface> aura_surface(
+  //   static_cast<zaura_surface*>(zaura_shell_get_aura_surface(window->globals_.aura_shell.get(), window->surface_.get()))
+  // );  
+
+  // zaura_surface_set_frame(aura_surface.get(), ZAURA_SURFACE_FRAME_TYPE_NORMAL);
+  // zaura_surface_set_frame_colors(aura_surface.get(), 0, 0);
+}
+
+void WaylandWindow::shell_workspace_info(void *data,
+			       struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
+			       uint32_t display_id_hi,
+			       uint32_t display_id_lo,
+			       int32_t x,
+			       int32_t y,
+			       int32_t width,
+			       int32_t height,
+			       int32_t inset_left,
+			       int32_t inset_top,
+			       int32_t inset_right,
+			       int32_t inset_bottom,
+			       int32_t stable_inset_left,
+			       int32_t stable_inset_top,
+			       int32_t stable_inset_right,
+			       int32_t stable_inset_bottom,
+			       int32_t systemui_visibility,
+			       int32_t transform,
+			       uint32_t is_internal,
+			       struct wl_array *identification_data){
+  DEBUG("shell_listener workspace_info %d %d %d %d", x, y, width, height);    
+  __asm__("int3");
+  return;
+
+  // WaylandWindow *window = (WaylandWindow *)data;
+
+  // zcr_remote_surface_v1_set_title(window->remote_shell_surface_.get(), "title");  
+  // // zcr_remote_surface_v1_set_extra_title(window->remote_shell_surface_.get(), "title2");
+  // zcr_remote_surface_v1_set_window_type(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_WINDOW_TYPE_NORMAL);
+  // zcr_remote_surface_v1_set_frame(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_FRAME_TYPE_AUTOHIDE);    
+  // zcr_remote_surface_v1_set_rectangular_surface_shadow(window->remote_shell_surface_.get(), 0, 0, -1, -1);    
+  // zcr_remote_surface_v1_set_bounds(window->remote_shell_surface_.get(), display_id_hi, display_id_lo, 0, 0, window->width_, window->height_);  
+  // zcr_remote_surface_v1_set_aspect_ratio(window->remote_shell_surface_.get(), 0, 0);
+  // zcr_remote_surface_v1_set_top_inset(window->remote_shell_surface_.get(), 33);
+  // zcr_remote_surface_v1_set_frame_buttons(window->remote_shell_surface_.get(), 
+  //   ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE, 
+  //   ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE
+  // );  
+  // zcr_remote_surface_v1_set_orientation(window->remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_ORIENTATION_LANDSCAPE);  
+  // // zcr_remote_surface_v1_set_scale(window->remote_shell_surface_.get(), window->scale_);
+
+  // std::unique_ptr<zaura_surface> aura_surface(
+  //   static_cast<zaura_surface*>(zaura_shell_get_aura_surface(window->globals_.aura_shell.get(), window->surface_.get()))
+  // );  
+
+  // zaura_surface_set_frame(aura_surface.get(), ZAURA_SURFACE_FRAME_TYPE_NORMAL);
+  // zaura_surface_set_frame_colors(aura_surface.get(), 0, 0);
+
+  // DEBUG("wl_display_flush");
+  // wl_display_flush(window->display_.get());  
+}	
+
+void WaylandWindow::shell_surface_close(void *data,
+		      struct zcr_remote_surface_v1 *zcr_remote_surface_v1){
+  DEBUG("surface_listener close");
+
+  WaylandWindow *window = (WaylandWindow *)data;
+  // zcr_remote_shell_v1_destroy(zcr_remote_surface_v1);  
+  // zcr_remote_surface_v1_destroy(zcr_remote_surface_v1);  
+
+  window->window_manager_->remove_task(window->task());  
+
+  // delete window;
+}
+
+void WaylandWindow::shell_surface_state_type_changed(void *data,
+				   struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+				   uint32_t state_type){
+  DEBUG("surface_listener state_type_changed");
+}
+
+void WaylandWindow::shell_surface_configure(void *data,
+			  struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+			  int32_t origin_offset_x,
+			  int32_t origin_offset_y,
+			  struct wl_array *states,
+			  uint32_t serial){
+  DEBUG("surface_listener configure");
+}
+
+void WaylandWindow::shell_surface_window_geometry_changed(void *data,
+					struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+					int32_t x,
+					int32_t y,
+					int32_t width,
+					int32_t height){  
+  WaylandWindow *window = (WaylandWindow *)data;
+
+  anbox::graphics::Rect rc(x, y, x + width, y + height);
+  if (window->current_rect_ == rc){
+    return;
+  }
+
+  DEBUG("surface_listener window_geometry_changed %d %d %d %d", x, y, width, height);
+
+  anbox::graphics::Rect rc2(x, y, x + width, y + height);
+  window->current_rect_ = anbox::graphics::Rect(x, y, x + width, y + height);
+    
+  window->window_manager_->resize_task(window->task(), rc2, 3);
+}
+
+void WaylandWindow::shell_surface_bounds_changed(void *data,
+			       struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+			       uint32_t display_id_hi,
+			       uint32_t display_id_lo,
+			       int32_t x,
+			       int32_t y,
+			       int32_t width,
+			       int32_t height,
+			       uint32_t bounds_change_reason){
+  DEBUG("surface_listener bounds_changed %d %d %d %d", x, y, width, height);
+
+  WaylandWindow *window = (WaylandWindow *)data;
+  window->current_rect_ = anbox::graphics::Rect(x, y, x + width, y + height);  
+
+  zcr_remote_surface_v1_set_bounds(zcr_remote_surface_v1, display_id_hi, display_id_lo, x, y, width, height);  
+}
+
+void WaylandWindow::shell_surface_drag_started(void *data,
+			     struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+			     uint32_t direction){
+             DEBUG("surface_listener drag_started");
+}
+
+void WaylandWindow::shell_surface_drag_finished(void *data,
+			      struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+			      int32_t x,
+			      int32_t y,
+			      int32_t canceled){
+              DEBUG("surface_listener drag_finished");
+}
+  
+void WaylandWindow::shell_surface_change_zoom_level(void *data,
+				  struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
+				  int32_t change){
+            DEBUG("surface_listener change_zoom_level");
 }
 
 }
