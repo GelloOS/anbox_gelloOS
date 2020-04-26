@@ -31,7 +31,7 @@
 
 using namespace anbox;
 
-int session(const std::shared_ptr<platform::BasePlatform> &platform){  
+int session(){
   auto trap = core::posix::trap_signals_for_process(
         {core::posix::Signal::sig_term, core::posix::Signal::sig_int});
 
@@ -67,6 +67,7 @@ int session(const std::shared_ptr<platform::BasePlatform> &platform){
   //                                    input_manager,
   //                                    platform_config);  
 
+  auto platform = std::make_shared<anbox::WaylandPlatform>(input_manager);
   auto app_db = std::make_shared<application::Database>();
 
   std::shared_ptr<wm::Manager> window_manager;
@@ -185,6 +186,46 @@ int session(const std::shared_ptr<platform::BasePlatform> &platform){
   chown("/run/chrome/anbox/sockets/anbox_bridge", 655360, 655360);
   chown("/run/chrome/anbox/sockets/qemu_pipe", 655360, 655360);
 
+
+  chmod((SystemConfiguration::instance().input_device_dir() + "/event0").data(), S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+  chmod((SystemConfiguration::instance().input_device_dir() + "/event1").data(), S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+  chmod((SystemConfiguration::instance().input_device_dir() + "/event2").data(), S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+  chown((SystemConfiguration::instance().input_device_dir() + "/event0").data(), 656360, 656360);
+  chown((SystemConfiguration::instance().input_device_dir() + "/event1").data(), 656360, 656360);
+  chown((SystemConfiguration::instance().input_device_dir() + "/event2").data(), 656360, 656360);
+
+  chdir("/opt/google/containers/anbox");
+
+  try{
+    auto containerPid = utils::read_file_if_exists_or_throw("/run/containers/android-anbox/container.pid");
+
+    DEBUG("kill android-anbox %s", containerPid);
+    kill(atoi(containerPid.data()), SIGKILL);
+
+    DEBUG("destroy android-anbox");
+    std::vector<std::string> argv;
+    argv.push_back(std::string("destroy"));
+    argv.push_back(std::string("android-anbox"));
+
+    std::map<std::string, std::string> env;
+    // env.insert(std::make_pair(std::string("XDG_RUNTIME_DIR"), std::string("/run/chrome")));  
+    auto p1 = core::posix::exec(std::string("/usr/bin/run_oci"), argv, env, core::posix::StandardStream::empty);
+    p1.dont_kill_on_cleanup();
+    // run_oci destroy android-anbox
+  } catch (std::exception &err) {    
+  }  
+  
+  DEBUG("start android-anbox");
+  std::vector<std::string> argv;
+  argv.push_back(std::string("start"));
+  argv.push_back(std::string("android-anbox"));
+
+  std::map<std::string, std::string> env;
+  // env.insert(std::make_pair(std::string("XDG_RUNTIME_DIR"), std::string("/run/chrome")));  
+  auto p1 = core::posix::exec(std::string("/usr/bin/run_oci"), argv, env, core::posix::StandardStream::empty);
+  p1.dont_kill_on_cleanup();
+
+  DEBUG("start rt");
   rt->start();    
   trap->run();
 
@@ -196,11 +237,9 @@ int session(const std::shared_ptr<platform::BasePlatform> &platform){
 int main(int argc, char** argv) {  
   Log().Init(anbox::Logger::Severity::kDebug);  
 
-  DEBUG("main thread: %llX", pthread_self());
+  DEBUG("main thread: %llX", pthread_self());  
 
-  auto platform = std::make_shared<anbox::WaylandPlatform>();
-
-  session(platform);
+  session();
 
   return 0;
 }
