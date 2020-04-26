@@ -165,7 +165,7 @@ set(SOURCES
     ../anbox/container/management_api_skeleton.h
     ../anbox/container/management_api_stub.cpp
     ../anbox/container/management_api_stub.h
-    ../anbox/container/service.cpp
+    #../anbox/container/service.cpp
     ../anbox/container/service.h
 
     #../anbox/dbus/bus.cpp
