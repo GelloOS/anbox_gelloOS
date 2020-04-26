@@ -2,24 +2,16 @@
 
 #include "anbox/logger.h"
 #include "wayland_platform.h"
-
-wl_seat_listener seat_listener = {
-  [](void *data, struct wl_seat *wl_seat, uint32_t capabilities){
-    ::fydeos::Globals* globals = static_cast<::fydeos::Globals*>(data);  
-    DEBUG("seat capabilities: %08X", capabilities);    
-
-    if (capabilities & WL_SEAT_CAPABILITY_POINTER){      
-      std::shared_ptr<wl_pointer> pointer(wl_seat_get_pointer(globals->seat.get()));
-    }
-  },
-  [](void *data, struct wl_seat *wl_seat, const char *name){
-    DEBUG("seat %s", name);    
-  }
-};
+#include "wayland_pointer.h"
+#include "wayland_keyboard.h"
+#include "wayland_touch.h"
+#include "audio_sink.h"
 
 namespace anbox{  
 
-WaylandPlatform::WaylandPlatform(){  
+WaylandPlatform::WaylandPlatform(const std::shared_ptr<input::Manager> &input_manager):
+  AnboxInput(input_manager, graphics::Rect(1024, 720)){  
+  
   static wl_registry_listener registry_listener = {
     [](void* data, wl_registry* registry, uint32_t id, const char* interface, uint32_t version) {
       ::fydeos::Globals* globals = static_cast<::fydeos::Globals*>(data);  
@@ -61,8 +53,7 @@ WaylandPlatform::WaylandPlatform(){
       } else if (strcmp(interface, "zwp_linux_explicit_synchronization_v1") == 0) {
         globals->linux_explicit_synchronization.reset(
             static_cast<zwp_linux_explicit_synchronization_v1*>(wl_registry_bind(
-                registry, id, &zwp_linux_explicit_synchronization_v1_interface,
-                1)));
+                registry, id, &zwp_linux_explicit_synchronization_v1_interface, 1)));
       } else if (strcmp(interface, "wp_viewporter") == 0) {
         globals->viewporter.reset(
             static_cast<wp_viewporter*>(wl_registry_bind(
@@ -86,8 +77,43 @@ WaylandPlatform::WaylandPlatform(){
   wl_registry_add_listener(registry_.get(), &registry_listener, &globals_);    
   wl_display_roundtrip(display_.get());
 
-  wl_seat_add_listener(globals_.seat.get(), &seat_listener, &globals_);
-  wl_display_flush(display_.get());
+  static wl_seat_listener seat_listener = {
+    [](void *data, struct wl_seat *wl_seat, uint32_t capabilities){
+      // ::fydeos::Globals* globals = static_cast<::fydeos::Globals*>(data);  
+      DEBUG("seat capabilities: %08X", capabilities);    
+
+      if (capabilities & WL_SEAT_CAPABILITY_POINTER){              
+        std::shared_ptr<wl_pointer> pointer(wl_seat_get_pointer(wl_seat));
+
+        new WaylandPointer(std::move(pointer), (AnboxInput *)data);
+      }
+      
+      if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD){
+        std::shared_ptr<wl_keyboard> keyboard(wl_seat_get_keyboard(wl_seat));
+
+        new WaylandKeyboard(std::move(keyboard), (AnboxInput *)data);
+      }
+
+      if (capabilities & WL_SEAT_CAPABILITY_TOUCH){
+        std::shared_ptr<wl_touch> touch(wl_seat_get_touch(wl_seat));
+                
+        // AnboxInput *p = (AnboxInput *)wl_seat_get_user_data(globals->seat.get());
+        // DEBUG("p2 %llX", p);
+
+        // for (int i = 0; i < sizeof(p->touch_slots) / sizeof(int); i++){
+        //   DEBUG("== %d", p->touch_slots[i]);
+        // }
+        
+        new WaylandTouch(std::move(touch), (AnboxInput *)data);
+      }
+    },
+    [](void *data, struct wl_seat *wl_seat, const char *name){
+      DEBUG("seat %s", name);    
+    }
+  };
+  
+  wl_seat_add_listener(globals_.seat.get(), &seat_listener, dynamic_cast<AnboxInput*>(this));
+  wl_display_flush(display_.get());  
 
   // display_.reset(wl_display_connect(nullptr));
   // registry_.reset(wl_display_get_registry(display_.get()));   
@@ -120,7 +146,7 @@ WaylandPlatform::~WaylandPlatform(){}
 
 void WaylandPlatform::messageLoop(){
   do{
-    DEBUG("WaylandPlatform::messageLoop %llX", pthread_self());
+    // DEBUG("WaylandPlatform::messageLoop %llX", pthread_self());
   // } while (wl_display_dispatch_queue(display_.get(), queue_.get()) != -1);  
   } while (wl_display_dispatch(display_.get()) != -1);  
 
@@ -171,13 +197,11 @@ std::shared_ptr<wm::Window> WaylandPlatform::create_window(
   
   DEBUG("WaylandPlatform::create_window %d %s %d %d %d %d", task, title, frame.left(), frame.top(), frame.width(), frame.height());
   
-  auto w = std::make_shared<anbox::WaylandWindow>(globals_, display_, renderer_, task, frame, title);
+  auto w = std::make_shared<anbox::WaylandWindow>(globals_, display_, window_manager_, renderer_, task, frame, title);
   if (false == w->init()){
     DEBUG("WaylandWindow init failed.");
     return nullptr;
   }  
-
-  // window_manager_->resize_task(task, frame, 3);  
 
   return w;
 }
@@ -185,7 +209,7 @@ std::shared_ptr<wm::Window> WaylandPlatform::create_window(
 void WaylandPlatform::set_clipboard_data(const platform::BasePlatform::ClipboardData &data){
   DEBUG("WaylandPlatform::set_clipboard_data");
 }
-  
+
 platform::BasePlatform::ClipboardData WaylandPlatform::get_clipboard_data(){
   DEBUG("WaylandPlatform::get_clipboard_data");
   return platform::BasePlatform::ClipboardData{};
@@ -193,7 +217,8 @@ platform::BasePlatform::ClipboardData WaylandPlatform::get_clipboard_data(){
 
 std::shared_ptr<audio::Sink> WaylandPlatform::create_audio_sink(){
   DEBUG("WaylandPlatform::create_audio_sink");  
-  return nullptr;
+
+  return std::make_shared<fydeos::AudioSink>();  
 }
 
 void WaylandPlatform::set_renderer(const std::shared_ptr<Renderer> &renderer){

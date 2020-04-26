@@ -11,6 +11,8 @@ namespace anbox{
 class WaylandTouch{
 private:
   std::shared_ptr<wl_touch> touch_;
+  int current_left_;
+  int current_top_;
 
 public:  
   AnboxInput *input_manager_;
@@ -37,10 +39,13 @@ private:
 
     WaylandWindow *window = WaylandWindow::getWindowFromSurface(surface);
 
-    DEBUG("touch down window: %llX %llX", surface, window);
+    // DEBUG("touch down window: %llX %llX", surface, window);
 
-    int xx = window->current_rect_.left() + wl_fixed_to_double(x);
+    int xx = window->current_rect_.left() + wl_fixed_to_double(x);    
     int yy = window->current_rect_.top() + wl_fixed_to_double(y);
+
+    touch->current_left_ = window->current_rect_.left();
+    touch->current_top_ = window->current_rect_.top();
 
     // int xx = wl_fixed_to_double(x);
     // int yy = wl_fixed_to_double(y);
@@ -83,11 +88,14 @@ private:
     // int xx = window->current_rect_.left() + wl_fixed_to_double(x);
     // int yy = window->current_rect_.top() + wl_fixed_to_double(y);
 
+    int xx = touch->current_left_ + wl_fixed_to_double(x);
+    int yy = touch->current_top_ + wl_fixed_to_double(y);
+
     std::vector<input::Event> event;
-    touch->input_manager_->push_finger_motion(x, y, id, event);  
+    touch->input_manager_->push_finger_motion(xx, yy, id, event);  
     if (event.size() > 0){
       touch->input_manager_->touch_->send_events(event);
-      DEBUG("WaylandTouch::Motion %d %d %d %d %d", id, time, x, y, event.size());
+      DEBUG("WaylandTouch::Motion %d %d %d %d %d", id, time, xx, yy, event.size());
     }
   }
 

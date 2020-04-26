@@ -59,16 +59,16 @@ private:
                   uint32_t time,
                   uint32_t key,
                   uint32_t state){                    
-    DEBUG("WaylandKeyboard::Key %d", key);
+    DEBUG("WaylandKeyboard::Key %d %d", key, state);
 
     WaylandKeyboard *keyboard = (WaylandKeyboard*)data;  
 
     std::vector<input::Event> keyboard_events;    
-    if (state & WL_KEYBOARD_KEY_STATE_PRESSED){
+    if (state == WL_KEYBOARD_KEY_STATE_PRESSED){
       keyboard_events.push_back({EV_KEY, key, 1});
     }
 
-    if (state & WL_KEYBOARD_KEY_STATE_RELEASED){
+    if (state == WL_KEYBOARD_KEY_STATE_RELEASED){
       keyboard_events.push_back({EV_KEY, key, 0});
     }      
 

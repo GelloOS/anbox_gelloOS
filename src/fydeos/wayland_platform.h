@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "../anbox/platform/base_platform.h"
+#include "../anbox/input/manager.h"
 #include "../anbox/wm/manager.h"
 
 #include "wayland_helper.h"
@@ -13,7 +14,11 @@
 namespace anbox{
 
 class WaylandPlatform: 
-  public platform::BasePlatform{  
+  public platform::BasePlatform,
+  public AnboxInput{  
+public:
+  
+
 private:
   std::shared_ptr<wl_display> display_;
   // std::unique_ptr<wl_display> display_;  
@@ -21,6 +26,7 @@ private:
   std::unique_ptr<wl_event_queue> queue_;
   std::unique_ptr<wl_callback> callback_;
 
+  // std::shared_ptr<input::Manager> input_manager_;
   std::map<int32_t, std::weak_ptr<wm::Window>> windows_;
   std::shared_ptr<wm::Manager> window_manager_;
   std::shared_ptr<Renderer> renderer_;
@@ -31,7 +37,7 @@ private:
   std::thread message_thread_;
 
 public:
-  WaylandPlatform();
+  WaylandPlatform(const std::shared_ptr<input::Manager> &input_manager);
   virtual ~WaylandPlatform();
   std::shared_ptr<wm::Window> create_window(const anbox::wm::Task::Id &task, const anbox::graphics::Rect &frame, const std::string &title) override;
 
@@ -45,6 +51,16 @@ public:
   void set_window_manager(const std::shared_ptr<wm::Manager> &window_manager) override;
 
   bool supports_multi_window() const override;  
+
+/*
+public:
+  void window_deleted(const anbox::wm::Task::Id &task) override {
+    // window_manager_->remove_task(id);
+  }
+  void window_wants_focus(const std::int32_t &id) override {}
+  void window_moved(const std::int32_t &id, const std::int32_t &x, const std::int32_t &y) override {}
+  void window_resized(const std::int32_t &id, const std::int32_t &x, const std::int32_t &y) override {}
+*/
 
 public:
   wl_display* getDisplay(){ return display_.get(); }

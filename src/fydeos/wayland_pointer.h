@@ -5,6 +5,8 @@
 #include "../anbox/logger.h"
 #include "anbox_input.h"
 
+#include "ui/gfx/geometry/point_f.h"
+
 namespace anbox{
 
 class WaylandPointer{
@@ -13,6 +15,8 @@ private:
 
 public:  
   AnboxInput *input_manager_;
+  gfx::PointF location_;
+  gfx::PointF current_window_location_;
 
 public:
   WaylandPointer(
