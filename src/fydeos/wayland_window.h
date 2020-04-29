@@ -150,76 +150,7 @@ public:
     return static_cast<WaylandWindow*>(wl_proxy_get_user_data(reinterpret_cast<wl_proxy*>(surface)));
   }
 
-private:
-  static void shell_activated(void *data,
-			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-			  struct wl_surface *gained_active,
-			  struct wl_surface *lost_active);                                
-
-  static void shell_configuration_changed(void *data,
-				      struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-				      int32_t width,
-				      int32_t height,
-				      int32_t transform,
-				      wl_fixed_t scale_factor,
-				      int32_t work_area_inset_left,
-				      int32_t work_area_inset_top,
-				      int32_t work_area_inset_right,
-				      int32_t work_area_inset_bottom,
-				      uint32_t layout_mode);      
-
-  static void shell_workspace(void *data,
-			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-			  uint32_t display_id_hi,
-			  uint32_t display_id_lo,
-			  int32_t x,
-			  int32_t y,
-			  int32_t width,
-			  int32_t height,
-			  int32_t inset_left,
-			  int32_t inset_top,
-			  int32_t inset_right,
-			  int32_t inset_bottom,
-			  int32_t transform,
-			  wl_fixed_t scale_factor,
-			  uint32_t is_internal);            
-
-  static void shell_configure(void *data,
-			  struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-			  uint32_t layout_mode);      
-
-  static void shell_default_device_scale_factor(void *data,
-          struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-          int32_t scale);      
-
-  static void shell_display_info(void *data,
-			     struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-			     uint32_t display_id_hi,
-			     uint32_t display_id_lo,
-			     int32_t width,
-			     int32_t height,
-			     struct wl_array *identification_data);        
-  static void shell_workspace_info(void *data,
-			       struct zcr_remote_shell_v1 *zcr_remote_shell_v1,
-			       uint32_t display_id_hi,
-			       uint32_t display_id_lo,
-			       int32_t x,
-			       int32_t y,
-			       int32_t width,
-			       int32_t height,
-			       int32_t inset_left,
-			       int32_t inset_top,
-			       int32_t inset_right,
-			       int32_t inset_bottom,
-			       int32_t stable_inset_left,
-			       int32_t stable_inset_top,
-			       int32_t stable_inset_right,
-			       int32_t stable_inset_bottom,
-			       int32_t systemui_visibility,
-			       int32_t transform,
-			       uint32_t is_internal,
-			       struct wl_array *identification_data);      
-
+private:       
   static void shell_surface_close(void *data,
 		      struct zcr_remote_surface_v1 *zcr_remote_surface_v1);              
 
