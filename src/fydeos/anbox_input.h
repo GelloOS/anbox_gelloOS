@@ -27,11 +27,14 @@ public:
   int last_slot = -1;
 
 public:
-  AnboxInput(const std::shared_ptr<input::Manager> &input_manager, graphics::Rect display_frame):
-    display_frame_(display_frame),
-    input_manager_(input_manager){        
+  AnboxInput(const std::shared_ptr<input::Manager> &input_manager):    
+    input_manager_(input_manager){            
+  }
 
-    pointer_ = input_manager->create_device();
+  void init(graphics::Rect &display_frame){
+    display_frame_ = display_frame;
+
+    pointer_ = input_manager_->create_device();
     pointer_->set_name("anbox-pointer");
     pointer_->set_driver_version(1);
     pointer_->set_input_id({BUS_VIRTUAL, 2, 2, 2});
@@ -45,7 +48,7 @@ public:
     pointer_->set_rel_bit(REL_WHEEL);
     pointer_->set_prop_bit(INPUT_PROP_POINTER);
 
-    keyboard_ = input_manager->create_device();
+    keyboard_ = input_manager_->create_device();
     keyboard_->set_name("anbox-keyboard");
     keyboard_->set_driver_version(1);
     keyboard_->set_input_id({BUS_VIRTUAL, 3, 3, 3});
@@ -53,7 +56,7 @@ public:
     keyboard_->set_key_bit(BTN_MISC);
     keyboard_->set_key_bit(KEY_OK);
 
-    touch_ = input_manager->create_device();
+    touch_ = input_manager_->create_device();
     touch_->set_name("anbox-touch");
     touch_->set_driver_version(1);
     touch_->set_input_id({BUS_VIRTUAL, 4, 4, 4});
