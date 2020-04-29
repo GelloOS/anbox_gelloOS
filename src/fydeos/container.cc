@@ -29,6 +29,7 @@ constexpr unsigned int unprivileged_user_id{656360};
 
 std::string android_img_path_;
 std::string data_path_;
+
 //std::shared_ptr<common::LoopDevice> android_img_loop_dev_;
 std::vector<std::shared_ptr<common::MountEntry>> mounts_;
 bool privileged_ = true;
@@ -62,7 +63,7 @@ bool setup_rootfs_overlay() {
 }
 
 bool setup_mounts() {
-  fs::path android_img_path = android_img_path_;
+  fs::path android_img_path = android_img_path_ + "/android.img";
   if (android_img_path.empty())
     android_img_path = SystemConfiguration::instance().data_dir() / "android.img";
 
@@ -71,7 +72,8 @@ bool setup_mounts() {
     return false;
   }
 
-  const auto android_rootfs_dir = SystemConfiguration::instance().rootfs_dir();
+  // const auto android_rootfs_dir = SystemConfiguration::instance().rootfs_dir();  
+  const auto android_rootfs_dir = android_img_path_ + "/rootfs";
   if (utils::is_mounted(android_rootfs_dir)) {
     ERROR("Androd rootfs is already mounted!?");
     return false;
@@ -147,10 +149,10 @@ bool setup_mounts() {
       return false;
 
     final_android_rootfs_dir = SystemConfiguration::instance().combined_rootfs_dir();
-  }
+  }  
 
-
-  for (const auto &dir_name : std::vector<std::string>{"cache", "data"}) {
+  //for (const auto &dir_name : std::vector<std::string>{"cache", "data", "dalvik-cache"}) {
+  for (const auto &dir_name : std::vector<std::string>{"cache", "data"}) {  
     auto target_dir_path = fs::path(final_android_rootfs_dir) / dir_name;
     auto src_dir_path = SystemConfiguration::instance().data_dir() / dir_name;
 
@@ -160,21 +162,30 @@ bool setup_mounts() {
         mounts_.clear();
         return false;
       }
-      if (::chown(src_dir_path.c_str(), unprivileged_user_id, unprivileged_user_id) != 0) {
-        ERROR("Failed to allow access for unprivileged user on %s directory of the rootfs", dir_name);
-        mounts_.clear();
-        return false;
-      }
+
+      if (0 == strcmp(dir_name.data(), "cache")){
+        if (::chown(src_dir_path.c_str(), unprivileged_user_id - 1000, unprivileged_user_id - 1000) != 0) {
+          ERROR("Failed to allow access for unprivileged user on %s directory of the rootfs", dir_name);
+          mounts_.clear();
+          return false;
+        }
+      }else{
+        if (::chown(src_dir_path.c_str(), unprivileged_user_id, unprivileged_user_id) != 0) {
+          ERROR("Failed to allow access for unprivileged user on %s directory of the rootfs", dir_name);
+          mounts_.clear();
+          return false;
+        }
+      }      
     }
 
-    auto m = common::MountEntry::create(src_dir_path, target_dir_path, "", MS_MGC_VAL | MS_BIND | MS_PRIVATE);
+    auto m = common::MountEntry::create(src_dir_path, target_dir_path, "", MS_MGC_VAL | MS_BIND | MS_PRIVATE);    
     if (!m) {
       ERROR("Failed to mount Android %s directory", dir_name);
       mounts_.clear();
       return false;
     }
     mounts_.push_back(m);
-  }
+  }  
 
   // Unmounting needs to happen in reverse order
   std::reverse(mounts_.begin(), mounts_.end());
@@ -183,8 +194,9 @@ bool setup_mounts() {
 }
 
 
-int main(int argc, char** argv) {  
-  data_path_ = argv[1];
+int main(int argc, char** argv) {
+  android_img_path_ = argv[1];
+  data_path_ = argv[2];
 
   auto trap = core::posix::trap_signals_for_process(
       {core::posix::Signal::sig_term, core::posix::Signal::sig_int});
