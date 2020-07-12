@@ -37,4 +37,5 @@ echo "Waiting for filesystem being prepared ..."
 wait $!
 
 echo "Starting real init now ..."
+ln -s /dev/pts/ptmx /dev/ptmx
 exec /init
