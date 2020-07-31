@@ -41,7 +41,7 @@ class Connections {
     connections.erase(id);
   }
 
-  bool includes(int id) const {
+  bool includes(int id) {
     std::unique_lock<std::mutex> lock(mutex);
     return connections.find(id) != connections.end();
   }
