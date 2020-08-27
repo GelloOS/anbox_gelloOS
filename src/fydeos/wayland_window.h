@@ -100,6 +100,7 @@ public:
     const std::shared_ptr<Renderer> &renderer,
     const anbox::wm::Task::Id &task, 
     const anbox::graphics::Rect &frame, 
+    int scale,
     const std::string &title);
   
   virtual ~WaylandWindow(){    

@@ -208,7 +208,7 @@ std::shared_ptr<wm::Window> WaylandPlatform::create_window(
   
   DEBUG("WaylandPlatform::create_window %d %s %d %d %d %d", task, title, frame.left(), frame.top(), frame.width(), frame.height());
   
-  auto w = std::make_shared<anbox::WaylandWindow>(globals_, display_, window_manager_, renderer_, task, frame, title);
+  auto w = std::make_shared<anbox::WaylandWindow>(globals_, display_, window_manager_, renderer_, task, frame, scale_, title);
   if (false == w->init()){
     DEBUG("WaylandWindow init failed.");
     return nullptr;
@@ -307,7 +307,10 @@ void WaylandPlatform::shell_configure(void *data, struct zcr_remote_shell_v1 *zc
 }
 
 void WaylandPlatform::shell_default_device_scale_factor(void *data, struct zcr_remote_shell_v1 *zcr_remote_shell_v1, int32_t scale){
-  DEBUG("shell_listener default_device_scale_factor %08X", scale);
+  WaylandPlatform *platform = (WaylandPlatform *)data;  
+
+  platform->scale_ = scale >> 24;
+  DEBUG("shell_listener default_device_scale_factor %08X", platform->scale_);
 }
 
 void WaylandPlatform::shell_display_info(void *data,
@@ -368,12 +371,12 @@ void WaylandPlatform::shell_workspace_info(void *data,
 			       uint32_t is_internal,
 			       struct wl_array *identification_data){
 
-  WaylandPlatform *platform = (WaylandPlatform *)data;  
+  WaylandPlatform *platform = (WaylandPlatform *)data;    
   platform->window_rect_ = anbox::graphics::Rect(x, y, width, height);
 
   graphics::Rect rc(0, 0, width, height);
   platform->init(rc);
-
+ 
   DEBUG("shell_listener workspace_info %d %d %d %d", 
     platform->window_rect_.left(), 
     platform->window_rect_.right(), 

@@ -93,18 +93,19 @@ WaylandWindow::WaylandWindow(
   const std::shared_ptr<Renderer> &renderer,
   const anbox::wm::Task::Id &task, 
   const anbox::graphics::Rect &frame, 
+  int scale,
   const std::string &title):
     display_(display),
     globals_(globals),
     window_manager_(window_manager),
-    task_(task),
-    wm::Window(renderer, task, frame, title){  
+    task_(task),    
+    scale_(scale),
+    wm::Window(renderer, task, frame, title){    
 
   width_ = frame.width();
-  height_ = frame.height();
+  height_ = frame.height();  
 
-  // width_ = 760;
-  // height_ = 620;
+  scale_ = 1;
  
   DEBUG("WaylandWindow %d %d %d %d", frame.left(), frame.top(), frame.right(), frame.bottom());
   DEBUG("WaylandWindow %d %d %s", width_, height_, title.data());  
@@ -246,7 +247,8 @@ bool WaylandWindow::init(){
     return false;
   }
 
-  wl_surface_set_buffer_scale(surface_.get(), scale_);
+  // DEBUG("wl_surface_set_buffer_scale %d", scale_);
+  // wl_surface_set_buffer_scale(surface_.get(), scale_);
   wl_surface_set_buffer_transform(surface_.get(), transform_);  
   wl_surface_set_user_data(surface_.get(), this);
 
@@ -302,7 +304,8 @@ bool WaylandWindow::init(){
     ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE
   );  
   zcr_remote_surface_v1_set_orientation(remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_ORIENTATION_LANDSCAPE);  
-  // zcr_remote_surface_v1_set_scale(remote_shell_surface_.get(), scale_);
+  // zcr_remote_surface_v1_set_scale(remote_shell_surface_.get(), scale_ << 24);
+  // zcr_remote_surface_v1_set_scale(remote_shell_surface_.get(), wl_fixed_from_double(scale_));    
 
   std::unique_ptr<zaura_surface> aura_surface(
     static_cast<zaura_surface*>(zaura_shell_get_aura_surface(globals_.aura_shell.get(), surface_.get()))
@@ -325,7 +328,7 @@ bool WaylandWindow::init(){
   // zcr_remote_surface_v1_set_min_size(remote_shell_surface_.get(), width_, height_);    
   // zcr_remote_surface_v1_activate(remote_shell_surface_.get(), 1);
 
-  // zcr_remote_surface_v1_set_window_geometry(remote_shell_surface_.get(), 0, 0, width_, height_);
+  zcr_remote_surface_v1_set_window_geometry(remote_shell_surface_.get(), 0, 0, width_, height_);
   // zcr_remote_surface_v1_set_scale(remote_shell_surface_.get(), 1);
 #else  
   std::unique_ptr<wl_shell_surface> shell_surface(
@@ -401,6 +404,8 @@ std::unique_ptr<WaylandWindow::Buffer> WaylandWindow::CreateBuffer(
     }
   };
   wl_buffer_add_listener(buffer->buffer.get(), &buffer_listener, buffer.get());
+
+  DEBUG("WaylandWindow::CreateBuffer %d %d %d", width, height, scale_);
   return buffer;
 }
 
@@ -499,7 +504,7 @@ WaylandWindow::Buffer* WaylandWindow::DequeueBuffer() {
   if (buffer_it == buffers_.end()){
     DEBUG("not found valid buffer, %d", buffers_.size());
 
-    auto buffer = CreateBuffer(width_, height_, drm_format_, bo_usage_);
+    auto buffer = CreateBuffer(width_ * scale_, height_ * scale_, drm_format_, bo_usage_);
     if (!buffer) {
       DEBUG("Failed to create buffer");
       // LOG(ERROR) << "Failed to create buffer";
@@ -517,7 +522,7 @@ WaylandWindow::Buffer* WaylandWindow::DequeueBuffer() {
 
 anbox::fydeos::Buffer_Ext* WaylandWindow::bind(){  
   auto buffer = DequeueBuffer();
-  if (!buffer){
+  if (!buffer){    
     __asm__("int3");
   }
 
@@ -627,11 +632,11 @@ void WaylandWindow::shell_surface_window_geometry_changed(void *data,
     return;
   }
 
-  DEBUG("surface_listener window_geometry_changed %d %d %d %d", x, y, width, height);
+  DEBUG("surface_listener window_geometry_changed %d %d %d %d", rc.left(), rc.top(), rc.width(), rc.height());
 
-  anbox::graphics::Rect rc2(x, y, x + width, y + height);
-  window->current_rect_ = anbox::graphics::Rect(x, y, x + width, y + height);
-    
+  anbox::graphics::Rect rc2(rc.left(), rc.top(), rc.right(), rc.bottom());
+  window->current_rect_ = anbox::graphics::Rect(rc.left(), rc.top(), rc.right(), rc.bottom());
+
   window->window_manager_->resize_task(window->task(), rc2, 3);
 }
 
@@ -655,7 +660,8 @@ void WaylandWindow::shell_surface_bounds_changed(void *data,
 void WaylandWindow::shell_surface_drag_started(void *data,
 			     struct zcr_remote_surface_v1 *zcr_remote_surface_v1,
 			     uint32_t direction){
-             DEBUG("surface_listener drag_started");
+             
+  DEBUG("surface_listener drag_started %d", direction);  
 }
 
 void WaylandWindow::shell_surface_drag_finished(void *data,
@@ -663,7 +669,17 @@ void WaylandWindow::shell_surface_drag_finished(void *data,
 			      int32_t x,
 			      int32_t y,
 			      int32_t canceled){
-              DEBUG("surface_listener drag_finished");
+
+  if (canceled == true){
+    return;
+  }              
+
+  WaylandWindow *window = (WaylandWindow *)data;            
+  
+  // window->current_rect_.translate(x, y);  
+  // window->window_manager_->resize_task(window->task(), window->current_rect_, 3);
+  
+  DEBUG("surface_listener drag_finished %d %d", x, y);
 }
   
 void WaylandWindow::shell_surface_change_zoom_level(void *data,
