@@ -9,6 +9,7 @@
 #include "../anbox/input/manager.h"
 #include "../anbox/graphics/rect.h"
 #include "../anbox/logger.h"
+#include "../anbox/graphics/emugl/DisplayManager.h"
 
 namespace anbox{
 
@@ -32,6 +33,7 @@ public:
   }
 
   void init(graphics::Rect &display_frame){
+    graphics::emugl::DisplayInfo::get()->set_resolution(display_frame.width(), display_frame.height());
     display_frame_ = display_frame;
 
     pointer_ = input_manager_->create_device();
@@ -112,7 +114,7 @@ public:
     touch_events.push_back({EV_ABS, ABS_MT_POSITION_X, x});
     touch_events.push_back({EV_ABS, ABS_MT_POSITION_Y, y});
     touch_events.push_back({EV_SYN, SYN_REPORT, 0});
-  }
+  }  
 
   void push_finger_up(int finger_id, std::vector<input::Event> &touch_events){
     int slot = find_touch_slot(finger_id);
