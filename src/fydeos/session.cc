@@ -183,9 +183,11 @@ int session(){
 
   chmod("/run/chrome/anbox/sockets/anbox_bridge", S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
   chmod("/run/chrome/anbox/sockets/qemu_pipe", S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
-  chown("/run/chrome/anbox/sockets/anbox_bridge", 655360, 655360);
-  chown("/run/chrome/anbox/sockets/qemu_pipe", 655360, 655360);
-
+  chmod("/run/chrome/anbox/sockets/anbox_audio", S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+  chown("/run/chrome/anbox/sockets/anbox_bridge", 656360, 656360);  
+  chown("/run/chrome/anbox/sockets/qemu_pipe", 656360, 656360);
+  chown("/run/chrome/anbox/sockets/anbox_audio", 656360, 656360);
+  chown("/run/chrome/anbox/input", 656360, 656360);
 
   chmod((SystemConfiguration::instance().input_device_dir() + "/event0").data(), S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
   chmod((SystemConfiguration::instance().input_device_dir() + "/event1").data(), S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
@@ -237,8 +239,8 @@ int session(){
 int main(int argc, char** argv) {  
   Log().Init(anbox::Logger::Severity::kDebug);  
 
-  DEBUG("main thread: %llX", pthread_self());  
-
+  DEBUG("main thread: %llX", pthread_self());    
+  
   session();
 
   return 0;
