@@ -37,13 +37,23 @@ namespace anbox{
 class WaylandWindow: 
   public wm::Window,
   public fydeos::WaylandRenderer{
-public:  
-  struct Buffer {  
+public:
+  enum BufferState{
+    NONE,
+    IDLE,
+    DIRTY,
+    BUSY
+  };
+
+  struct Buffer {
     std::unique_ptr<wl_buffer> buffer;
-    bool busy = false;
+    BufferState state;    
+    int width, height;    
+
+    WaylandWindow *window;
 
     std::unique_ptr<gbm_bo> bo;
-    EGLImageKHR egl_image;
+    // EGLImageKHR egl_image;
     // std::unique_ptr<ScopedEglImage> egl_image;
     // std::unique_ptr<ScopedEglSync> egl_sync;
     // std::unique_ptr<ScopedTexture> texture;
@@ -65,7 +75,7 @@ public:
   // std::unique_ptr<wl_egl_window> window_;
   // std::unique_ptr<wl_shell_surface> shell_surface_;
   std::unique_ptr<zcr_remote_surface_v1> remote_shell_surface_;
-  std::unique_ptr<zcr_input_method_surface_v1> input_surface_;
+  std::unique_ptr<zcr_input_method_surface_v1> input_surface_;  
   std::thread message_thread_;
   anbox::wm::Task::Id task_;
   std::shared_ptr<wm::Manager> window_manager_;
@@ -78,11 +88,10 @@ public:
   int drm_fd_ = -1;
   std::unique_ptr<gbm_device> device_;
 
-  bool transparent_background_ = false;
-  int width_ = 1024;
-  int height_ = 768;
+  bool transparent_background_ = false;  
   size_t num_buffers_ = 2;
   int scale_ = 1;
+  int top_inset_ = 32;
   int transform_ = WL_OUTPUT_TRANSFORM_NORMAL;
   int32_t drm_format_ = DRM_FORMAT_ARGB8888;
   int32_t bo_usage_ = GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING | GBM_BO_USE_TEXTURING;

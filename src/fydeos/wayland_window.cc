@@ -102,13 +102,11 @@ WaylandWindow::WaylandWindow(
     scale_(scale),
     wm::Window(renderer, task, frame, title){    
 
-  width_ = frame.width();
-  height_ = frame.height();  
-
   scale_ = 1;
+  current_rect_ = anbox::graphics::Rect(frame.left(), frame.top(), frame.right(), frame.bottom());  
  
-  DEBUG("WaylandWindow %d %d %d %d", frame.left(), frame.top(), frame.right(), frame.bottom());
-  DEBUG("WaylandWindow %d %d %s", width_, height_, title.data());  
+  DEBUG("WaylandWindow %d %d %d %d", current_rect_.left(), current_rect_.top(), current_rect_.right(), current_rect_.bottom());
+  DEBUG("WaylandWindow %d %d %s", current_rect_.width(), current_rect_.height(), title.data());  
 }
 
 bool WaylandWindow::init(){
@@ -255,8 +253,11 @@ bool WaylandWindow::init(){
   std::unique_ptr<wp_viewport> viewport(
     wp_viewporter_get_viewport(globals_.viewporter.get(), surface_.get())
   );
-
-  wp_viewport_set_source(viewport.get(), 0, 0, width_, height_);
+  
+  wp_viewport_set_source(viewport.get(), 
+    0, 0, 
+    current_rect_.width(), current_rect_.height()
+  );
   
   if (!transparent_background_) {
     std::unique_ptr<wl_region> opaque_region(static_cast<wl_region*>(
@@ -267,7 +268,7 @@ bool WaylandWindow::init(){
       return false;
     }
 
-    wl_region_add(opaque_region.get(), 0, 0, width_, height_);
+    wl_region_add(opaque_region.get(), 0, 0, current_rect_.width(), current_rect_.height());
     wl_surface_set_opaque_region(surface_.get(), opaque_region.get());
     // wl_surface_set_input_region(surface_.get(), opaque_region.get());    
   }  
@@ -288,17 +289,14 @@ bool WaylandWindow::init(){
     WaylandWindow::shell_surface_change_zoom_level
   };
   zcr_remote_surface_v1_add_listener(remote_shell_surface_.get(), &surface_listener, this);      
-  // wl_display_flush(display_.get());  
+  // wl_display_flush(display_.get());      
     
   zcr_remote_surface_v1_set_title(remote_shell_surface_.get(), title().data());
   // zcr_remote_surface_v1_set_extra_title(remote_shell_surface_.get(), "title2");
   zcr_remote_surface_v1_set_window_type(remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_WINDOW_TYPE_NORMAL);
-  zcr_remote_surface_v1_set_frame(remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_FRAME_TYPE_AUTOHIDE);    
-  //zcr_remote_surface_v1_set_rectangular_surface_shadow(remote_shell_surface_.get(), 0, 0, -1, -1);    
-  // zcr_remote_surface_v1_set_bounds(remote_shell_surface_.get(), 0, 0, 0, 0, width_, height_);  
-  zcr_remote_surface_v1_set_aspect_ratio(remote_shell_surface_.get(), 0, 0);
-  // zcr_remote_surface_v1_set_top_inset(remote_shell_surface_.get(), 60);
-  zcr_remote_surface_v1_set_top_inset(remote_shell_surface_.get(), 32);
+  zcr_remote_surface_v1_set_frame(remote_shell_surface_.get(), ZCR_REMOTE_SURFACE_V1_FRAME_TYPE_AUTOHIDE);           
+  // zcr_remote_surface_v1_set_aspect_ratio(remote_shell_surface_.get(), 0, 0);  
+  zcr_remote_surface_v1_set_top_inset(remote_shell_surface_.get(), top_inset_);
   zcr_remote_surface_v1_set_frame_buttons(remote_shell_surface_.get(), 
     ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE, 
     ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_CLOSE | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_BACK | ZCR_REMOTE_SURFACE_V1_FRAME_BUTTON_TYPE_MINIMIZE
@@ -326,9 +324,13 @@ bool WaylandWindow::init(){
   // DEBUG("zcr_remote_surface_v1: %llX", remote_shell_surface_.get());
 
   // zcr_remote_surface_v1_set_min_size(remote_shell_surface_.get(), width_, height_);    
-  // zcr_remote_surface_v1_activate(remote_shell_surface_.get(), 1);
-
-  zcr_remote_surface_v1_set_window_geometry(remote_shell_surface_.get(), 0, 0, width_, height_);
+  // zcr_remote_surface_v1_activate(remote_shell_surface_.get(), 1);  
+  
+  zcr_remote_surface_v1_set_bounds(remote_shell_surface_.get(), 
+    0, 0, 
+    current_rect_.left(), current_rect_.top(),
+    current_rect_.width(), current_rect_.height()
+  );  
   // zcr_remote_surface_v1_set_scale(remote_shell_surface_.get(), 1);
 #else  
   std::unique_ptr<wl_shell_surface> shell_surface(
@@ -396,13 +398,21 @@ std::unique_ptr<WaylandWindow::Buffer> WaylandWindow::CreateBuffer(
 #endif  
   
   static wl_buffer_listener buffer_listener = {
-    [](void* data, wl_buffer* /* buffer */) {  
+    [](void* data, wl_buffer* /* buffer */) {        
       WaylandWindow::Buffer* buffer = static_cast<WaylandWindow::Buffer*>(data);
-      // DEBUG("BufferRelease %llX %llX", buffer, &buffer->ext);
+      // DEBUG("BufferRelease %d %d %d", buffer->width, buffer->height, buffer->state);      
+      
+      if (buffer->window->current_rect_.width() != buffer->width || 
+          buffer->window->current_rect_.height() != buffer->height){
+        
+        buffer->state = BufferState::DIRTY;
+        return;
+      }
 
-      buffer->busy = false;
+      buffer->state = BufferState::IDLE;            
     }
   };
+      
   wl_buffer_add_listener(buffer->buffer.get(), &buffer_listener, buffer.get());
 
   DEBUG("WaylandWindow::CreateBuffer %d %d %d", width, height, scale_);
@@ -418,6 +428,10 @@ std::unique_ptr<WaylandWindow::Buffer> WaylandWindow::CreateDrmBuffer(
 #if defined(USE_GBM)
   if (device_) {
     buffer = std::make_unique<Buffer>();
+    buffer->width = width;
+    buffer->height = height;
+    buffer->window = this;
+    buffer->state = BufferState::IDLE;
     buffer->bo.reset(gbm_bo_create(device_.get(), width, height, drm_format, bo_usage));
     if (!buffer->bo) {
       // LOG(ERROR) << "Can't create gbm buffer";
@@ -498,17 +512,33 @@ WaylandWindow::Buffer* WaylandWindow::DequeueBuffer() {
     buffers_.begin(), 
     buffers_.end(), 
     [](const std::unique_ptr<WaylandWindow::Buffer>& buffer) {
-      return !buffer->busy;
+      if (buffer->window->current_rect_.width() != buffer->width ||
+          buffer->window->current_rect_.height() != buffer->height){
+        return false;
+      }
+
+      return buffer->state == BufferState::IDLE;      
     });
 
   if (buffer_it == buffers_.end()){
     DEBUG("not found valid buffer, %d", buffers_.size());
-
-    auto buffer = CreateBuffer(width_ * scale_, height_ * scale_, drm_format_, bo_usage_);
+        
+    auto buffer = CreateBuffer(current_rect_.width() * scale_, current_rect_.height() * scale_, drm_format_, bo_usage_);
     if (!buffer) {
-      DEBUG("Failed to create buffer");
-      // LOG(ERROR) << "Failed to create buffer";
+      DEBUG("Failed to create buffer");      
       return nullptr;
+    }
+
+    for (auto buffer_it2 = buffers_.begin(); buffer_it2 != buffers_.end();){
+      if (buffer_it2->get()->state != BufferState::DIRTY){
+        ++buffer_it2;
+        continue;
+      }
+
+      getFydeRenderer()->deleteFydeBuffer(&buffer_it2->get()->ext);
+
+      buffer_it2->release();      
+      buffer_it2 = buffers_.erase(buffer_it2);      
     }
   
     buffers_.push_back(std::move(buffer));
@@ -516,14 +546,14 @@ WaylandWindow::Buffer* WaylandWindow::DequeueBuffer() {
   }  
 
   Buffer* buffer = buffer_it->get();
-  buffer->busy = true;
+  buffer->state = BufferState::BUSY;  
   return buffer;
 }
 
-anbox::fydeos::Buffer_Ext* WaylandWindow::bind(){  
+anbox::fydeos::Buffer_Ext* WaylandWindow::bind(){    
   auto buffer = DequeueBuffer();
   if (!buffer){    
-    __asm__("int3");
+    DEBUG("WaylandWindow::bind not found valid buffer");
   }
 
   // DEBUG("WaylandWindow::bind thread: %llX %llX %llX", pthread_self(), buffer, &buffer->ext);  
@@ -537,22 +567,18 @@ void WaylandWindow::unbind(anbox::fydeos::Buffer_Ext *pExt){
   //   // glFinish();        
   // }  
 
-  auto buffer_it = std::find_if(
-    buffers_.begin(), 
-    buffers_.end(), 
+  auto buffer_it = std::find_if(buffers_.begin(), buffers_.end(), 
     [&](const std::unique_ptr<WaylandWindow::Buffer>& buffer) {
       return &buffer->ext == pExt;
-    });
-
-  if (buffer_it == buffers_.end()){
-    __asm__("int3");        
-  }
+    });  
 
   // DEBUG("WaylandWindow::unbind %llX %llX %llX %llX", display_.get(), pthread_self(), buffer_it->get(), pExt);
 
   // wl_surface_set_buffer_scale(surface_.get(), scale_);
-  // wl_surface_set_buffer_transform(surface_.get(), transform_);  
-  wl_surface_damage(surface_.get(), 0, 0, width_, height_);
+  wl_surface_set_buffer_transform(surface_.get(), transform_);      
+
+  // DEBUG("wl_surface_damage %d %d", current_rect_.width(), current_rect_.height());
+  wl_surface_damage(surface_.get(), 0, 0, current_rect_.width(), current_rect_.height());
   wl_surface_attach(surface_.get(), buffer_it->get()->buffer.get(), 0, 0);
 
   // auto buffer = DequeueBuffer();
@@ -589,8 +615,6 @@ void WaylandWindow::unbind(anbox::fydeos::Buffer_Ext *pExt){
   // wl_display_dispatch(display_.get());
 }
 
-
-
 void WaylandWindow::shell_surface_close(void *data,
 		      struct zcr_remote_surface_v1 *zcr_remote_surface_v1){
   DEBUG("surface_listener close");
@@ -625,19 +649,26 @@ void WaylandWindow::shell_surface_window_geometry_changed(void *data,
 					int32_t y,
 					int32_t width,
 					int32_t height){  
+  return;          
   WaylandWindow *window = (WaylandWindow *)data;
 
   anbox::graphics::Rect rc(x, y, x + width, y + height);
-  if (window->current_rect_ == rc){
-    return;
-  }
+  // if (window->current_rect_ == rc){
+  //   return;
+  // }  
 
-  DEBUG("surface_listener window_geometry_changed %d %d %d %d", rc.left(), rc.top(), rc.width(), rc.height());
+  DEBUG("surface_listener window_geometry_changed %d %d %d %d %d %d", rc.left(), rc.top(), rc.right(), rc.bottom(), rc.width(), rc.height());
+  return;
 
-  anbox::graphics::Rect rc2(rc.left(), rc.top(), rc.right(), rc.bottom());
+  zcr_remote_surface_v1_set_window_geometry(
+    zcr_remote_surface_v1, 
+    x, y, 
+    width, height
+  );
+
   window->current_rect_ = anbox::graphics::Rect(rc.left(), rc.top(), rc.right(), rc.bottom());
-
-  window->window_manager_->resize_task(window->task(), rc2, 3);
+  // anbox::graphics::Rect rc2(rc.left(), rc.top(), rc.right(), rc.bottom());  
+  // window->window_manager_->resize_task(window->task(), rc2, 3);
 }
 
 void WaylandWindow::shell_surface_bounds_changed(void *data,
@@ -649,12 +680,54 @@ void WaylandWindow::shell_surface_bounds_changed(void *data,
 			       int32_t width,
 			       int32_t height,
 			       uint32_t bounds_change_reason){
-  DEBUG("surface_listener bounds_changed %d %d %d %d", x, y, width, height);
+
+  DEBUG("surface_listener bounds_changed %d %d %d %d %d %d %d", display_id_hi, display_id_lo, x, y, width, height, bounds_change_reason);  
+
+	// ZCR_REMOTE_SURFACE_V1_BOUNDS_CHANGE_REASON_DRAG_MOVE = 1,
+	// /**
+	//  * the window is being resized by drag operation.
+	//  */
+	// ZCR_REMOTE_SURFACE_V1_BOUNDS_CHANGE_REASON_DRAG_RESIZE = 2,
+	// /**
+	//  * the window is resized to left snapped state
+	//  */
+	// ZCR_REMOTE_SURFACE_V1_BOUNDS_CHANGE_REASON_SNAP_TO_LEFT = 3,
+	// /**
+	//  * the window is resized to right snapped state
+	//  */
+	// ZCR_REMOTE_SURFACE_V1_BOUNDS_CHANGE_REASON_SNAP_TO_RIGHT = 4,
+	// /**
+	//  * the window bounds is moved due to other WM operations
+	//  */
+	// ZCR_REMOTE_SURFACE_V1_BOUNDS_CHANGE_REASON_MOVE = 5,
+	// /**
+	//  * the window bounds is reiszed due to other WM operations
+	//  */
+	// ZCR_REMOTE_SURFACE_V1_BOUNDS_CHANGE_REASON_RESIZE = 6,
+	// /**
+	//  * the window bounds is resized for PIP
+	//  */
+	// ZCR_REMOTE_SURFACE_V1_BOUNDS_CHANGE_REASON_MOVE_PIP = 7,
 
   WaylandWindow *window = (WaylandWindow *)data;
   window->current_rect_ = anbox::graphics::Rect(x, y, x + width, y + height);  
+  
+  zcr_remote_surface_v1_set_bounds(
+    zcr_remote_surface_v1, 
+    display_id_hi, 
+    display_id_lo, 
+    x, y, 
+    width, height
+  );  
 
-  zcr_remote_surface_v1_set_bounds(zcr_remote_surface_v1, display_id_hi, display_id_lo, x, y, width, height);  
+  zcr_remote_surface_v1_set_rectangular_surface_shadow(
+    zcr_remote_surface_v1, 
+    0, 0, 
+    width, height
+  );      
+  
+  window->update_frame(window->current_rect_);
+  window->window_manager_->resize_task(window->task(), window->current_rect_, 3);  
 }
 
 void WaylandWindow::shell_surface_drag_started(void *data,
