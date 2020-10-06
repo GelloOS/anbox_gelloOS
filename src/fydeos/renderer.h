@@ -26,6 +26,7 @@ public:
   virtual ~Renderer(){}
   
   virtual void createFydeBuffer(Buffer_Ext *pExt, EGLint *pAttr) = 0;
+  virtual void deleteFydeBuffer(Buffer_Ext *pExt) = 0;
   // virtual void setWaylandRenderer(WaylandRenderer *pWaylandRenderer) = 0;
 };
 

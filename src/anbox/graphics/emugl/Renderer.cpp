@@ -425,7 +425,7 @@ HandleType Renderer::createWindowSurface(int p_config, int p_width,
   std::unique_lock<std::mutex> l(m_lock);
 
   HandleType ret = 0;
-
+  
   const RendererConfig *config = getConfigs()->get(p_config);
   if (!config) {
     return ret;
@@ -985,9 +985,7 @@ bool Renderer::draw(EGLNativeWindowType native_window,
 
   anbox::fydeos::Buffer_Ext *pExt = nullptr;
   if (!bindWindow_locked(w->second, &pExt))
-    return false;
-
-  DEBUG("Renderer::draw %d %d", window_frame.width(), window_frame.height());
+    return false;  
 
   setupViewport(w->second, window_frame);
   s_gles2.glViewport(0, 0, window_frame.width(), window_frame.height());
@@ -1040,6 +1038,12 @@ void Renderer::createFydeBuffer(anbox::fydeos::Buffer_Ext *pExt, EGLint *pAttr){
   }
   
   s_gles2.glBindTexture(GL_TEXTURE_2D, 0);  
+}
+
+void Renderer::deleteFydeBuffer(anbox::fydeos::Buffer_Ext *pExt){
+  s_gles2.glDeleteTextures(1, &pExt->fbo);
+  s_gles2.glDeleteTextures(1, &pExt->texture);
+  s_egl.eglDestroyImageKHR(m_eglDisplay, pExt->image);                   
 }
 
 // void Renderer::setWaylandRenderer(anbox::fydeos::WaylandRenderer *pWaylandRenderer){

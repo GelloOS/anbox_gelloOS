@@ -244,7 +244,7 @@ class Renderer : public anbox::graphics::Renderer, public anbox::fydeos::Rendere
 
 public:
   void createFydeBuffer(anbox::fydeos::Buffer_Ext *pExt, EGLint *pAttr) override;  
-  // void setWaylandRenderer(anbox::fydeos::WaylandRenderer *pWaylandRenderer) override;
+  void deleteFydeBuffer(anbox::fydeos::Buffer_Ext *pExt) override;  
 
   void grab(int width, int height);
   int bmp_write(unsigned char *image, int xsize, int ysize, char *filename);

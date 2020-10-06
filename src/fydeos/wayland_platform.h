@@ -25,6 +25,7 @@ private:
   std::unique_ptr<wl_registry> registry_;
   std::unique_ptr<wl_event_queue> queue_;
   std::unique_ptr<wl_callback> callback_;
+  int scale_;  
 
   // std::shared_ptr<input::Manager> input_manager_;
   std::map<int32_t, std::weak_ptr<wm::Window>> windows_;

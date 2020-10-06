@@ -150,7 +150,7 @@ bool setup_mounts() {
 
     final_android_rootfs_dir = SystemConfiguration::instance().combined_rootfs_dir();
   }  
-
+    
   //for (const auto &dir_name : std::vector<std::string>{"cache", "data", "dalvik-cache"}) {
   for (const auto &dir_name : std::vector<std::string>{"cache", "data"}) {  
     auto target_dir_path = fs::path(final_android_rootfs_dir) / dir_name;
@@ -177,7 +177,7 @@ bool setup_mounts() {
         }
       }      
     }
-
+    
     auto m = common::MountEntry::create(src_dir_path, target_dir_path, "", MS_MGC_VAL | MS_BIND | MS_PRIVATE);    
     if (!m) {
       ERROR("Failed to mount Android %s directory", dir_name);
@@ -185,6 +185,10 @@ bool setup_mounts() {
       return false;
     }
     mounts_.push_back(m);
+  }  
+
+  for (const auto &dir_name : std::vector<std::string>{"default", "read", "write"}) {          
+    fs::create_directories(std::string("/run/arc/sdcard/" + dir_name + "/emulated"));
   }  
 
   // Unmounting needs to happen in reverse order
